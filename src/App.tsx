@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Home, About, Troop } from "@/components/Pages";
 import { Events } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
-import { TileMark } from "@/components/Tiles";
 import type { SiteData } from "@/lib/data";
 import { defaultData, loadData, saveData } from "@/lib/data";
+import logoGold from "@/assets/logo-gold.png";
 
 const PAGES = [
   { id: "home", label: "Home" },
@@ -36,12 +36,12 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 backdrop-blur border-b" style={{ background: "rgba(251,247,241,0.88)", borderColor: "#EDE3D2" }}>
         <div className="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
-          <button onClick={() => go("home")} className="flex items-center gap-3 text-left">
-            <TileMark size={30} />
-            <span>
-              <span className="font-display text-2xl tracking-wide leading-none block">The Mahj</span>
-              <span className="text-[10px] uppercase tracking-[0.3em] block" style={{ color: "var(--gold)" }}>Leander, Texas</span>
-            </span>
+          <button onClick={() => go("home")} className="flex items-center text-left">
+            <img
+              src={logoGold}
+              alt="The Mahj"
+              className="h-14 w-auto object-contain"
+            />
           </button>
           <nav className="hidden md:flex items-center gap-7">
             {PAGES.map(p => (
@@ -81,8 +81,8 @@ export default function App() {
       <footer className="mt-10 border-t" style={{ borderColor: "#EDE3D2", background: "var(--ivory-deep)" }}>
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap items-center justify-between gap-6">
           <div>
-            <p className="font-display text-2xl">The Mahj</p>
-            <p className="text-xs mt-1 uppercase tracking-[0.2em]" style={{ color: "var(--gold)" }}>
+            <img src={logoGold} alt="The Mahj" className="h-20 w-auto object-contain" />
+            <p className="text-xs mt-2 uppercase tracking-[0.2em]" style={{ color: "var(--gold)" }}>
               Classes · Open Play · Troop Mahjong
             </p>
           </div>
