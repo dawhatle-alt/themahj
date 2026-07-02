@@ -14,6 +14,29 @@ const PAGES = [
   { id: "gallery", label: "Photos" },
 ] as const;
 
+const ESPRESSO = "#1A0F0A";
+const NAV_BASE = "#D9C9B8";
+const NAV_ACTIVE = "#B98A4A";
+
+function MenuIcon() {
+  return (
+    <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+      <rect y="0" width="22" height="2" rx="1" fill={NAV_BASE} />
+      <rect y="7" width="16" height="2" rx="1" fill={NAV_BASE} />
+      <rect y="14" width="22" height="2" rx="1" fill={NAV_BASE} />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <line x1="1" y1="1" x2="17" y2="17" stroke={NAV_BASE} strokeWidth="2" strokeLinecap="round" />
+      <line x1="17" y1="1" x2="1" y2="17" stroke={NAV_BASE} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [page, setPage] = useState<string>("home");
   const [data, setData] = useState<SiteData>(defaultData());
@@ -34,70 +57,115 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 backdrop-blur border-b" style={{ background: "rgba(251,247,241,0.88)", borderColor: "#EDE3D2" }}>
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40" style={{ background: ESPRESSO }}>
         <div className="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
-          <button onClick={() => go("home")} className="flex items-center text-left">
-            <span className="flex items-center justify-center rounded-lg px-2 py-1" style={{ background: "#1C1510" }}>
-              <img
-                src={logoGold}
-                alt="The Mahj"
-                className="h-11 w-auto object-contain"
-              />
-            </span>
+
+          {/* Logo */}
+          <button onClick={() => go("home")} className="flex items-center text-left shrink-0" aria-label="Go home">
+            <img src={logoGold} alt="The Mahj Edit" className="h-12 w-auto object-contain" />
           </button>
-          <nav className="hidden md:flex items-center gap-7">
-            {PAGES.map(p => (
-              <button key={p.id} onClick={() => go(p.id)}
-                className="text-[13px] uppercase tracking-[0.16em] pb-1 border-b-2 transition-colors"
-                style={{
-                  borderColor: page === p.id ? "var(--rose)" : "transparent",
-                  color: page === p.id ? "var(--rose-deep)" : "var(--ink)",
-                }}>
-                {p.label}
-              </button>
-            ))}
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
+            {PAGES.map(p => {
+              const active = page === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => go(p.id)}
+                  className="relative text-[12px] uppercase tracking-[0.2em] font-medium transition-colors duration-200 py-1 cursor-pointer"
+                  style={{ color: active ? NAV_ACTIVE : NAV_BASE }}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {p.label}
+                  {active && (
+                    <span
+                      className="absolute left-0 -bottom-0.5 w-full h-px"
+                      style={{ background: NAV_ACTIVE }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </nav>
-          <button className="md:hidden text-2xl" aria-label="Menu" onClick={() => setMenuOpen(m => !m)}>☰</button>
+
+          {/* Mobile menu toggle */}
+          <button
+            className="md:hidden flex items-center justify-center w-10 h-10 cursor-pointer"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen(m => !m)}
+          >
+            {menuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
         </div>
+
+        {/* Mobile nav drawer */}
         {menuOpen && (
-          <nav className="md:hidden border-t px-6 py-4 flex flex-col gap-3" style={{ borderColor: "#EDE3D2" }}>
-            {PAGES.map(p => (
-              <button key={p.id} onClick={() => go(p.id)} className="text-left text-sm uppercase tracking-[0.16em]"
-                style={{ color: page === p.id ? "var(--rose-deep)" : "var(--ink)" }}>
-                {p.label}
-              </button>
-            ))}
+          <nav
+            className="md:hidden border-t px-6 py-5 flex flex-col gap-4"
+            style={{ borderColor: "rgba(255,255,255,0.08)", background: ESPRESSO }}
+            aria-label="Mobile navigation"
+          >
+            {PAGES.map(p => {
+              const active = page === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => go(p.id)}
+                  className="text-left text-sm uppercase tracking-[0.18em] font-medium transition-colors duration-150 py-1"
+                  style={{ color: active ? NAV_ACTIVE : NAV_BASE }}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
           </nav>
         )}
       </header>
 
       <main className="flex-1">
-        {page === "home" && <Home data={data} go={go} />}
-        {page === "about" && <About go={go} />}
-        {page === "events" && <Events data={data} onChange={update} />}
-        {page === "troop" && <Troop go={go} />}
+        {page === "home"    && <Home data={data} go={go} />}
+        {page === "about"   && <About go={go} />}
+        {page === "events"  && <Events data={data} onChange={update} />}
+        {page === "troop"   && <Troop go={go} />}
         {page === "gallery" && <Gallery data={data} />}
-        {page === "admin" && <Admin data={data} onChange={update} />}
+        {page === "admin"   && <Admin data={data} onChange={update} />}
       </main>
 
-      <footer className="mt-10 border-t" style={{ borderColor: "#EDE3D2", background: "var(--ivory-deep)" }}>
-        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap items-center justify-between gap-6">
+      {/* ── Footer ── */}
+      <footer style={{ background: ESPRESSO }}>
+        <div className="max-w-6xl mx-auto px-6 py-12 flex flex-wrap items-end justify-between gap-8">
+
           <div>
-            <img src={logoGold} alt="The Mahj" className="h-20 w-auto object-contain" />
-            <p className="text-xs mt-2 uppercase tracking-[0.2em]" style={{ color: "var(--gold)" }}>
+            <img src={logoGold} alt="The Mahj Edit" className="h-16 w-auto object-contain" />
+            <p className="text-xs mt-3 uppercase tracking-[0.22em]" style={{ color: "#8A7260" }}>
               Classes · Open Play · Troop Mahjong
             </p>
           </div>
-          <div className="text-sm" style={{ color: "var(--ink-soft)" }}>
-            <p>Leander, Texas · hello@themahj.com</p>
-            <p className="mt-1">© {new Date().getFullYear()} The Mahj. All rights reserved.</p>
+
+          <div className="text-sm leading-relaxed" style={{ color: "#8A7260" }}>
+            <p>Leander, Texas</p>
+            <p>hello@themahj.com</p>
+            <p className="mt-2 text-xs" style={{ color: "#5C4A3A" }}>
+              © {new Date().getFullYear()} The Mahj Edit. All rights reserved.
+            </p>
           </div>
-          <button onClick={() => go("admin")} className="text-[11px] uppercase tracking-[0.2em] underline underline-offset-4"
-            style={{ color: "var(--ink-soft)" }}>
+
+          <button
+            onClick={() => go("admin")}
+            className="text-[11px] uppercase tracking-[0.2em] transition-colors duration-150"
+            style={{ color: "#5C4A3A" }}
+            onMouseOver={e => (e.currentTarget.style.color = "#8A7260")}
+            onMouseOut={e => (e.currentTarget.style.color = "#5C4A3A")}
+          >
             Admin
           </button>
         </div>
       </footer>
+
     </div>
   );
 }
