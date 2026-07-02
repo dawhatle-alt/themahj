@@ -37,11 +37,13 @@ export default function App() {
       <header className="sticky top-0 z-40 backdrop-blur border-b" style={{ background: "rgba(251,247,241,0.88)", borderColor: "#EDE3D2" }}>
         <div className="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
           <button onClick={() => go("home")} className="flex items-center text-left">
-            <img
-              src={logoGold}
-              alt="The Mahj"
-              className="h-14 w-auto object-contain"
-            />
+            <span className="flex items-center justify-center rounded-lg px-2 py-1" style={{ background: "#1C1510" }}>
+              <img
+                src={logoGold}
+                alt="The Mahj"
+                className="h-11 w-auto object-contain"
+              />
+            </span>
           </button>
           <nav className="hidden md:flex items-center gap-7">
             {PAGES.map(p => (
