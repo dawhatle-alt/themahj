@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Home, About, Troop } from "@/components/Pages";
 import { Events } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
@@ -159,12 +160,22 @@ export default function App() {
       </header>
 
       <main className="flex-1">
-        {page === "home"    && <Home data={data} go={go} />}
-        {page === "about"   && <About go={go} />}
-        {page === "events"  && <Events data={data} onChange={update} />}
-        {page === "troop"   && <Troop go={go} />}
-        {page === "gallery" && <Gallery data={data} />}
-        {page === "admin"   && <Admin data={data} onChange={update} />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {page === "home"    && <Home data={data} go={go} />}
+            {page === "about"   && <About go={go} />}
+            {page === "events"  && <Events data={data} onChange={update} />}
+            {page === "troop"   && <Troop go={go} />}
+            {page === "gallery" && <Gallery data={data} />}
+            {page === "admin"   && <Admin data={data} onChange={update} />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* ── Footer ── */}

@@ -1,30 +1,52 @@
 import { useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MahjEvent, Photo, SiteData } from "@/lib/data";
 import { EVENT_TYPE_META, fmtDate, resetData, uid } from "@/lib/data";
+
+const reveal = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (delay = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.68, delay, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
 
 // ---------------- GALLERY ----------------
 export function Gallery({ data }: { data: SiteData }) {
   const [open, setOpen] = useState<Photo | null>(null);
   return (
     <div className="max-w-6xl mx-auto px-6 py-14">
-      <p className="eyebrow">Around the table</p>
-      <h1 className="font-display text-5xl mt-3">Event photos</h1>
-      <p className="mt-4 max-w-xl" style={{ color: "var(--ink-soft)" }}>
+      <motion.p className="eyebrow"
+        variants={reveal} custom={0} initial="hidden" animate="visible">
+        Around the table
+      </motion.p>
+      <motion.h1
+        className="font-display leading-[0.9] mt-4 tracking-tight"
+        style={{ fontSize: "clamp(2.8rem,7vw,5rem)" }}
+        variants={reveal} custom={0.08} initial="hidden" animate="visible">
+        Event photos.
+      </motion.h1>
+      <motion.p className="mt-5 max-w-xl text-[17px] leading-relaxed" style={{ color: "var(--ink-soft)" }}
+        variants={reveal} custom={0.18} initial="hidden" animate="visible">
         Tablescapes, merit stickers, and the faces behind the mahjs.
-      </p>
+      </motion.p>
       {data.photos.length === 0 ? (
-        <div className="tile max-w-md mx-auto mt-12 p-10 text-center">
+        <motion.div className="tile max-w-md mx-auto mt-12 p-10 text-center"
+          variants={reveal} custom={0.28} initial="hidden" animate="visible">
           <p className="font-display italic text-2xl">No photos yet</p>
           <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>Photos from our next event will land here.</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="columns-2 md:columns-3 gap-4 mt-10 [&>*]:mb-4">
-          {data.photos.map(p => (
-            <button key={p.id} onClick={() => setOpen(p)} className="block w-full break-inside-avoid tile-hover text-left">
+          {data.photos.map((p, i) => (
+            <motion.button key={p.id} onClick={() => setOpen(p)}
+              className="block w-full break-inside-avoid tile-hover text-left"
+              variants={reveal} custom={i * 0.07} initial="hidden" whileInView="visible"
+              viewport={{ once: true }}>
               <img src={p.src} alt={p.caption} className="w-full rounded-lg border" style={{ borderColor: "#E9DFD0" }} />
               <p className="text-xs mt-1.5 px-0.5" style={{ color: "var(--ink-soft)" }}>{p.eventLabel}</p>
-            </button>
+            </motion.button>
           ))}
         </div>
       )}

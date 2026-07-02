@@ -1,7 +1,16 @@
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MahjEvent, SiteData } from "@/lib/data";
 import { EVENT_TYPE_META, fmtDate, seatsTaken, uid } from "@/lib/data";
+
+const reveal = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (delay = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.68, delay, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
 
 function monthLabel(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -57,16 +66,27 @@ export function Events({ data, onChange }: { data: SiteData; onChange: (d: SiteD
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-14">
-      <p className="eyebrow">Classes &amp; open play</p>
-      <h1 className="font-display text-5xl mt-3">The calendar</h1>
-      <p className="mt-4 max-w-xl" style={{ color: "var(--ink-soft)" }}>
+      <motion.p className="eyebrow"
+        variants={reveal} custom={0} initial="hidden" animate="visible">
+        Classes &amp; open play
+      </motion.p>
+      <motion.h1
+        className="font-display leading-[0.9] mt-4 tracking-tight"
+        style={{ fontSize: "clamp(2.8rem,7vw,5rem)" }}
+        variants={reveal} custom={0.08} initial="hidden" animate="visible">
+        The calendar.
+      </motion.h1>
+      <motion.p className="mt-5 max-w-xl text-[17px] leading-relaxed" style={{ color: "var(--ink-soft)" }}
+        variants={reveal} custom={0.18} initial="hidden" animate="visible">
         Reserve a seat at a beginner class, an open play night, or a Troop Mahjong evening.
         Tap any event to sign up.
-      </p>
+      </motion.p>
 
       <div className="grid lg:grid-cols-[1.15fr_1fr] gap-12 mt-10 items-start">
         {/* Calendar */}
-        <div className="bg-white/70 border rounded-lg p-5" style={{ borderColor: "#E9DFD0" }}>
+        <motion.div className="bg-white/70 border rounded-lg p-5" style={{ borderColor: "#E9DFD0" }}
+          initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}>
           <div className="flex items-center justify-between mb-4">
             <button aria-label="Previous month" onClick={() => setYm(({ y, m }) => m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 })}
               className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-[var(--blush)]">‹</button>
@@ -105,10 +125,12 @@ export function Events({ data, onChange }: { data: SiteData; onChange: (d: SiteD
               </span>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Upcoming list */}
-        <div className="space-y-4">
+        <motion.div className="space-y-4"
+          initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}>
           {upcoming.map(ev => {
             const taken = seatsTaken(data, ev.id);
             const left = Math.max(0, ev.seats - taken);
@@ -139,7 +161,7 @@ export function Events({ data, onChange }: { data: SiteData; onChange: (d: SiteD
               </div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
 
       {/* Signup dialog */}
