@@ -111,21 +111,32 @@ export function About({ go }: { go: (p: string) => void }) {
           </div>
           <div className="space-y-5 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
             <p>
-              Hi, I'm Patsy — teacher, hostess, and unapologetic collector of beautiful tiles.
-              What started as a weekly game with girlfriends turned into a full-blown love affair
-              with American mahjong, and The Mahj is where I get to share it.
+              I'm Rhonda, founder of The Mahj Edit.
             </p>
             <p>
-              I believe the game is only half of it. The other half is the table itself: the
-              chatter between hands, the celebratory toast on a hard-won mahj, the friend you
-              didn't have before you sat down. Every class and event I host is built around that.
+              The Mahj Edit was born from a simple idea: mahjong should be as beautiful and
+              memorable as the connections it creates.
             </p>
             <p>
-              Whether you've never touched a tile or you've been playing since your grandmother
-              taught you, there's a seat for you here in Leander.
+              After discovering the game, I quickly fell in love with its blend of strategy,
+              tradition, and community. What began as a personal passion evolved into a desire to
+              create elevated mahjong experiences where people can learn, gather, and build lasting
+              friendships.
+            </p>
+            <p>
+              Drawing on years of professional experience in leadership, learning, and skill
+              development, I bring a thoughtful and welcoming approach to teaching. Whether you're
+              brand new to the game or an experienced player looking to expand your circle, my goal
+              is to create an environment where everyone feels comfortable, confident, and inspired.
+            </p>
+            <p>
+              Through private lessons, group classes, special events, and curated experiences, The
+              Mahj Edit celebrates the art of gathering around the table. I believe the best games
+              are about more than winning — they're about connection, laughter, and creating moments
+              worth remembering.
             </p>
             <p className="font-display italic text-2xl pt-2" style={{ color: "var(--rose-deep)" }}>
-              — Come play with us.
+              Welcome to The Mahj Edit. I'm excited to share a seat at the table with you.
             </p>
             <button onClick={() => go("events")} className="btn-rose px-7 py-3 rounded-full text-sm uppercase tracking-[0.18em] mt-2">
               Find a class
