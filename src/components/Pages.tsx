@@ -1,6 +1,8 @@
 import { TileFan, Tile } from "@/components/Tiles";
 import type { SiteData } from "@/lib/data";
 import { EVENT_TYPE_META, fmtShort } from "@/lib/data";
+import portrait from "@/assets/about/image1.jpeg";
+import tilesAction from "@/assets/about/image0.jpeg";
 
 // ---------------- HOME ----------------
 export function Home({ data, go }: { data: SiteData; go: (p: string) => void }) {
@@ -94,47 +96,54 @@ export function Home({ data, go }: { data: SiteData; go: (p: string) => void }) 
 // ---------------- ABOUT ----------------
 export function About({ go }: { go: (p: string) => void }) {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-14">
-      <p className="eyebrow">About me</p>
-      <h1 className="font-display text-5xl mt-3">The woman behind the tiles</h1>
-      <div className="grid md:grid-cols-[1fr_1.4fr] gap-12 mt-10 items-start">
-        <div>
-          <div className="tile w-full aspect-[3/4] flex flex-col items-center justify-center gap-4 p-8">
-            <Tile face="flower" size={72} />
-            <p className="font-display italic text-xl text-center" style={{ color: "var(--ink-soft)" }}>
-              Your photo here
+    <div>
+      <div className="max-w-5xl mx-auto px-6 py-14">
+        <p className="eyebrow">About me</p>
+        <h1 className="font-display text-5xl mt-3">The woman behind the tiles</h1>
+        <div className="grid md:grid-cols-[1fr_1.4fr] gap-12 mt-10 items-start">
+          <div className="space-y-4">
+            <img
+              src={portrait}
+              alt="Portrait"
+              className="w-full rounded-xl border object-cover"
+              style={{ borderColor: "#E3D7C2", aspectRatio: "3/4", objectPosition: "top" }}
+            />
+          </div>
+          <div className="space-y-5 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
+            <p>
+              Hi, I'm Patsy — teacher, hostess, and unapologetic collector of beautiful tiles.
+              What started as a weekly game with girlfriends turned into a full-blown love affair
+              with American mahjong, and The Mahj is where I get to share it.
             </p>
-            <p className="text-xs text-center" style={{ color: "var(--ink-soft)" }}>
-              (Swap in a portrait from your Graphics folder)
+            <p>
+              I believe the game is only half of it. The other half is the table itself: the
+              chatter between hands, the celebratory toast on a hard-won mahj, the friend you
+              didn't have before you sat down. Every class and event I host is built around that.
             </p>
+            <p>
+              Whether you've never touched a tile or you've been playing since your grandmother
+              taught you, there's a seat for you here in Leander.
+            </p>
+            <p className="font-display italic text-2xl pt-2" style={{ color: "var(--rose-deep)" }}>
+              — Come play with us.
+            </p>
+            <button onClick={() => go("events")} className="btn-rose px-7 py-3 rounded-full text-sm uppercase tracking-[0.18em] mt-2">
+              Find a class
+            </button>
           </div>
         </div>
-        <div className="space-y-5 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
-          <p>
-            Hi, I'm Patsy — teacher, hostess, and unapologetic collector of beautiful tiles.
-            What started as a weekly game with girlfriends turned into a full-blown love affair
-            with American mahjong, and The Mahj is where I get to share it.
-          </p>
-          <p>
-            I believe the game is only half of it. The other half is the table itself: the
-            chatter between hands, the celebratory toast on a hard-won mahj, the friend you
-            didn't have before you sat down. Every class and event I host is built around that.
-          </p>
-          <p>
-            Whether you've never touched a tile or you've been playing since your grandmother
-            taught you, there's a seat for you here in Leander.
-          </p>
-          <p className="font-display italic text-2xl pt-2" style={{ color: "var(--rose-deep)" }}>
-            — Come play with us.
-          </p>
-          <button onClick={() => go("events")} className="btn-rose px-7 py-3 rounded-full text-sm uppercase tracking-[0.18em] mt-2">
-            Find a class
-          </button>
+      </div>
+
+      <div style={{ background: "var(--blush)" }}>
+        <div className="max-w-5xl mx-auto px-6 py-14">
+          <img
+            src={tilesAction}
+            alt="At the mahjong table"
+            className="w-full rounded-xl border object-cover"
+            style={{ borderColor: "#E3D7C2", maxHeight: "520px", objectPosition: "top" }}
+          />
         </div>
       </div>
-      <p className="mt-12 text-xs" style={{ color: "var(--ink-soft)" }}>
-        ✎ This bio is placeholder copy — tell me your real story and I'll rewrite it in your voice.
-      </p>
     </div>
   );
 }
