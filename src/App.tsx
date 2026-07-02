@@ -60,11 +60,43 @@ export default function App() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-40" style={{ background: ESPRESSO }}>
-        <div className="max-w-6xl mx-auto px-6 h-[72px] flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-[88px] flex items-center justify-between">
 
-          {/* Logo */}
-          <button onClick={() => go("home")} className="flex items-center text-left shrink-0" aria-label="Go home">
-            <img src={logoGold} alt="The Mahj Edit" className="h-12 w-auto object-contain" />
+          {/* Logo — mark + wordmark */}
+          <button
+            onClick={() => go("home")}
+            className="shrink-0 flex items-center gap-3 leading-none"
+            aria-label="Go home"
+          >
+            <img
+              src={logoGold}
+              alt=""
+              className="w-auto object-contain block"
+              style={{
+                height: "clamp(52px, 6vw, 64px)",
+                filter:
+                  "drop-shadow(0 0 10px rgba(185,138,74,0.65)) drop-shadow(0 0 3px rgba(185,138,74,0.45))",
+              }}
+            />
+            <span className="hidden sm:flex flex-col items-start" style={{ gap: "1px" }}>
+              <span
+                className="font-display italic leading-none"
+                style={{
+                  fontSize: "clamp(1.25rem, 2.2vw, 1.65rem)",
+                  background: "linear-gradient(135deg, #D4AA58 0%, #B98A4A 45%, #E8CA78 70%, #B98A4A 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                The Mahj Edit
+              </span>
+              <span
+                className="uppercase tracking-[0.3em] leading-none"
+                style={{ fontSize: "0.57rem", color: "#7A6040", letterSpacing: "0.3em" }}
+              >
+                Leander, Texas
+              </span>
+            </span>
           </button>
 
           {/* Desktop nav */}
