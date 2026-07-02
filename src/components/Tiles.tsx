@@ -1,4 +1,5 @@
 // Hand-drawn-feeling mahjong tiles in SVG, used as the brand's signature element.
+import { motion } from "framer-motion";
 
 const FACE: Record<string, JSX.Element> = {
   flower: (
@@ -60,18 +61,53 @@ export function Tile({ face, size = 84, className = "", rotate = 0 }: {
   );
 }
 
+const fanContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.15 },
+  },
+};
+
+const fanItem = (rot: number, lift: number) => ({
+  hidden: { opacity: 0, y: 40, rotate: rot * 0.5 },
+  visible: {
+    opacity: 1,
+    y: lift,
+    rotate: rot,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+  },
+});
+
 export function TileFan() {
   const faces: (keyof typeof FACE)[] = ["bam", "crak", "dot", "flower", "joker"];
   const rots = [-14, -7, 0, 7, 14];
   const lifts = [26, 10, 0, 10, 26];
   return (
-    <div className="relative flex items-end justify-center" aria-hidden="true">
+    <motion.div
+      className="relative flex items-end justify-center"
+      aria-hidden="true"
+      variants={fanContainer}
+      initial="hidden"
+      animate="visible"
+    >
       {faces.map((f, i) => (
-        <div key={f} className="tile-hover" style={{ marginLeft: i ? -18 : 0, transform: `translateY(${lifts[i]}px)` }}>
-          <Tile face={f} size={92} rotate={rots[i]} />
-        </div>
+        <motion.div
+          key={f}
+          style={{ marginLeft: i ? -18 : 0, originX: "50%", originY: "100%" }}
+          variants={fanItem(rots[i], lifts[i])}
+          whileHover={{
+            y: lifts[i] - 22,
+            rotate: rots[i] * 1.45,
+            scale: 1.08,
+            zIndex: 10,
+            transition: { duration: 0.28, ease: "easeOut" },
+          }}
+        >
+          <Tile face={f} size={92} />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 

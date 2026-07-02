@@ -1,0 +1,884 @@
+You are tasked with integrating an existing React component bundle into the codebase.
+
+The codebase should support:
+- React with TypeScript
+- Tailwind CSS (v3 or v4)
+- Modern build tools (Vite/Next.js)
+
+If your project doesn't support these, provide instructions on how to set them up.
+
+IMPORTANT: The App.tsx file is a showcase/example demonstrating the component usage. You should:
+1. Analyze the App component to understand how all the pieces work together
+2. Review the supporting components and utilities 
+3. Integrate the relevant parts into your project structure
+4. Adapt the implementation to match your project's patterns and requirements
+
+## Installation
+
+```bash
+npm install framer-motion lucide-react @radix-ui/react-slot class-variance-authority clsx tailwind-merge
+```
+
+## Styles
+
+### index.css
+
+```css
+/* This is Tailwind 4 CSS file */
+/* Extending Tailwind configuration */
+/* Use shadcn/ui format to extend the configuration */
+/* Add only the styles that your component needs */
+
+/* Base imports */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Custom dark variant for targeting dark mode elements */
+@custom-variant dark (&:is(.dark *));
+
+/* CSS variables and theme definitions */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Light theme variables */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* Dark theme variables */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Tailwind base styles */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+```
+
+
+## Component Files
+
+### lib/utils.ts
+
+```tsx
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+```
+
+### components/ui/button.tsx
+
+```tsx
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+  }) {
+  const Comp = asChild ? Slot : "button"
+
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+export { Button, buttonVariants }
+
+```
+
+### App.tsx
+
+```tsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Sparkles, TrendingUp, Zap, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(' ');
+
+interface FinancialHeroProps {
+  title: React.ReactNode;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+  imageUrl1: string;
+  imageUrl2: string;
+  className?: string;
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+    },
+  },
+};
+
+const cardsVariants = {
+  hidden: { opacity: 0, x: 50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.8,
+      ease: 'easeOut',
+      staggerChildren: 0.3,
+    },
+  },
+};
+
+const cardItemVariants = {
+  hidden: { opacity: 0, x: 50 },
+  visible: { opacity: 1, x: 0 },
+};
+
+const Variant1 = ({
+  title,
+  description,
+  buttonText,
+  buttonLink,
+  imageUrl1,
+  imageUrl2,
+  className,
+}: FinancialHeroProps) => {
+  const gridBackgroundStyle = {
+    backgroundImage:
+      'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px)',
+    backgroundSize: '3rem 3rem',
+  };
+
+  return (
+    <section className={cn('relative w-full overflow-hidden bg-background text-foreground', className)}>
+      <div className="absolute inset-0" style={gridBackgroundStyle} />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
+
+      <motion.div
+        className="relative container mx-auto flex min-h-[80vh] items-center justify-between px-6 py-20 lg:flex-row flex-col gap-12"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <div className="flex flex-col items-center text-center lg:items-start lg:text-left lg:w-1/2">
+          <motion.h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl" variants={itemVariants}>
+            {title}
+          </motion.h1>
+          <motion.p className="mt-6 max-w-xl text-lg text-muted-foreground" variants={itemVariants}>
+            {description}
+          </motion.p>
+          <motion.div variants={itemVariants} className="mt-8">
+            <a href={buttonLink}>
+              <Button size="lg" className="h-12 px-8 text-base">
+                {buttonText}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </a>
+          </motion.div>
+        </div>
+
+        <motion.div className="relative lg:w-1/2 h-full w-full flex items-center justify-center" variants={cardsVariants}>
+          <motion.img
+            src={imageUrl2}
+            alt="Financial Card Back"
+            variants={cardItemVariants}
+            whileHover={{ y: -10, rotate: -5, transition: { duration: 0.3 } }}
+            className="absolute h-48 md:h-80 rounded-2xl shadow-2xl object-cover transform rotate-[-6deg] translate-x-24"
+          />
+          <motion.img
+            src={imageUrl1}
+            alt="Financial Card Front"
+            variants={cardItemVariants}
+            whileHover={{ y: -10, rotate: 5, transition: { duration: 0.3 } }}
+            className="absolute h-48 md:h-80 rounded-2xl shadow-2xl object-cover transform rotate-[6deg] -translate-x-16"
+          />
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+};
+
+const Variant2 = ({
+  title,
+  description,
+  buttonText,
+  buttonLink,
+  imageUrl1,
+  imageUrl2,
+}: FinancialHeroProps) => {
+  return (
+    <section className="relative w-full min-h-screen bg-gradient-to-br from-primary/5 via-background to-background overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.1),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--primary)/0.08),transparent_50%)]" />
+
+      <motion.div
+        className="relative container mx-auto px-6 py-32 flex flex-col items-center text-center"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
+        >
+          <Sparkles className="w-4 h-4" />
+          Next-Gen Financial Platform
+        </motion.div>
+
+        <motion.h1
+          className="text-5xl md:text-7xl font-bold tracking-tight max-w-4xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          {title}
+        </motion.h1>
+
+        <motion.p
+          className="mt-6 text-xl text-muted-foreground max-w-2xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
+          {description}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          className="mt-10"
+        >
+          <a href={buttonLink}>
+            <Button size="lg" className="h-14 px-10 text-lg">
+              {buttonText}
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </a>
+        </motion.div>
+
+        <motion.div
+          className="relative mt-20 w-full max-w-5xl"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+        >
+          <div className="relative flex items-center justify-center gap-8">
+            <motion.img
+              src={imageUrl1}
+              alt="Card 1"
+              className="w-1/2 rounded-3xl shadow-2xl object-cover"
+              whileHover={{ scale: 1.05, rotate: 2 }}
+              transition={{ duration: 0.3 }}
+            />
+            <motion.img
+              src={imageUrl2}
+              alt="Card 2"
+              className="w-1/2 rounded-3xl shadow-2xl object-cover"
+              whileHover={{ scale: 1.05, rotate: -2 }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+};
+
+const Variant3 = ({
+  title,
+  description,
+  buttonText,
+  buttonLink,
+  imageUrl1,
+  imageUrl2,
+}: FinancialHeroProps) => {
+  return (
+    <section className="relative w-full min-h-screen bg-background overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+
+      <div className="relative container mx-auto px-6 py-20">
+        <div className="grid lg:grid-cols-2 gap-16 items-center min-h-[80vh]">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-2 text-primary">
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-sm font-semibold uppercase tracking-wider">Financial Excellence</span>
+            </div>
+
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
+              {title}
+            </h1>
+
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              {description}
+            </p>
+
+            <div className="flex flex-wrap gap-4 pt-4">
+              <a href={buttonLink}>
+                <Button size="lg" className="h-14 px-8 text-base">
+                  {buttonText}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </a>
+              <Button size="lg" variant="outline" className="h-14 px-8 text-base">
+                Learn More
+              </Button>
+            </div>
+
+            <div className="flex gap-8 pt-8">
+              <div>
+                <div className="text-3xl font-bold text-primary">99.9%</div>
+                <div className="text-sm text-muted-foreground">Uptime</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-primary">500K+</div>
+                <div className="text-sm text-muted-foreground">Users</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-primary">24/7</div>
+                <div className="text-sm text-muted-foreground">Support</div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative h-[600px]"
+          >
+            <motion.div
+              className="absolute top-0 right-0 w-3/4 h-3/4"
+              animate={{ y: [0, -20, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <img
+                src={imageUrl1}
+                alt="Card 1"
+                className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-background"
+              />
+            </motion.div>
+            <motion.div
+              className="absolute bottom-0 left-0 w-3/4 h-3/4"
+              animate={{ y: [0, 20, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+            >
+              <img
+                src={imageUrl2}
+                alt="Card 2"
+                className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-background"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Variant4 = ({
+  title,
+  description,
+  buttonText,
+  buttonLink,
+  imageUrl1,
+  imageUrl2,
+}: FinancialHeroProps) => {
+  return (
+    <section className="relative w-full min-h-screen bg-gradient-to-b from-background to-primary/5 overflow-hidden">
+      <div className="absolute inset-0">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-primary/20 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 3 + Math.random() * 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative container mx-auto px-6 py-20 min-h-screen flex flex-col justify-center">
+        <div className="max-w-7xl mx-auto w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium mb-6">
+              <Zap className="w-4 h-4" />
+              Powered by Innovation
+            </div>
+
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+              {title}
+            </h1>
+
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10">
+              {description}
+            </p>
+
+            <a href={buttonLink}>
+              <Button size="lg" className="h-14 px-10 text-lg">
+                {buttonText}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="relative"
+          >
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: -2 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl blur-xl" />
+                <img
+                  src={imageUrl1}
+                  alt="Card 1"
+                  className="relative w-full h-80 object-cover rounded-3xl shadow-2xl"
+                />
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl blur-xl" />
+                <img
+                  src={imageUrl2}
+                  alt="Card 2"
+                  className="relative w-full h-80 object-cover rounded-3xl shadow-2xl"
+                />
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Variant5 = ({
+  title,
+  description,
+  buttonText,
+  buttonLink,
+  imageUrl1,
+  imageUrl2,
+}: FinancialHeroProps) => {
+  return (
+    <section className="relative w-full min-h-screen bg-background overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
+      
+      <div className="relative container mx-auto px-6 py-20">
+        <div className="flex flex-col lg:flex-row-reverse gap-12 items-center min-h-[80vh]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="lg:w-1/2 relative"
+          >
+            <div className="relative w-full max-w-lg mx-auto">
+              <motion.div
+                className="absolute -top-4 -left-4 w-full h-full bg-primary/20 rounded-3xl"
+                animate={{ rotate: [0, 5, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div
+                className="relative bg-card rounded-3xl shadow-2xl overflow-hidden border border-border"
+                whileHover={{ y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <img
+                  src={imageUrl1}
+                  alt="Card 1"
+                  className="w-full h-96 object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background to-transparent">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Shield className="w-5 h-5" />
+                    <span className="font-semibold">Secure & Reliable</span>
+                  </div>
+                </div>
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-8 -right-8 w-2/3 h-64 rounded-2xl shadow-xl overflow-hidden border-4 border-background"
+                animate={{ rotate: [0, -5, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+              >
+                <img
+                  src={imageUrl2}
+                  alt="Card 2"
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="lg:w-1/2 space-y-6"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              Live Now
+            </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+              {title}
+            </h1>
+
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              {description}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <a href={buttonLink}>
+                <Button size="lg" className="h-12 px-8 w-full sm:w-auto">
+                  {buttonText}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </a>
+              <Button size="lg" variant="outline" className="h-12 px-8 w-full sm:w-auto">
+                Watch Demo
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-primary">5M+</div>
+                <div className="text-xs text-muted-foreground">Transactions</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-primary">150+</div>
+                <div className="text-xs text-muted-foreground">Countries</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-primary">A+</div>
+                <div className="text-xs text-muted-foreground">Security</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const FinancialHeroShowcase = () => {
+  const [selectedVariant, setSelectedVariant] = useState(1);
+
+  const defaultProps: FinancialHeroProps = {
+    title: (
+      <>
+        Ready to Transform Your <br />
+        <span className="text-primary">Management?</span>
+      </>
+    ),
+    description: "Experience the future of finance with our cutting-edge SaaS platform. Start optimizing your financial operations today!",
+    buttonText: "Download app",
+    buttonLink: "#",
+    imageUrl1: "https://images.unsplash.com/photo-1579965342575-16428a7c8881?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1974",
+    imageUrl2: "https://images.unsplash.com/premium_photo-1664013263421-91e3a8101259?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2070",
+  };
+
+  const variants = [
+    { id: 1, component: Variant1 },
+    { id: 2, component: Variant2 },
+    { id: 3, component: Variant3 },
+    { id: 4, component: Variant4 },
+    { id: 5, component: Variant5 },
+  ];
+
+  const SelectedComponent = variants.find(v => v.id === selectedVariant)?.component || Variant1;
+
+  return (
+    <div className="flex flex-col md:flex-row h-screen w-full bg-background">
+      <div className="md:hidden flex gap-2 p-2 overflow-x-auto bg-muted/30 border-b border-border">
+        {variants.map((variant) => {
+          const VariantComp = variant.component;
+          return (
+            <button
+              key={variant.id}
+              onClick={() => setSelectedVariant(variant.id)}
+              className={cn(
+                "relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                selectedVariant === variant.id
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="absolute inset-0 pointer-events-none">
+                <div style={{ transform: 'scale(0.08)', transformOrigin: 'top left', width: '1250%', height: '1250%' }}>
+                  <VariantComp {...defaultProps} />
+                </div>
+              </div>
+              <div className="absolute bottom-0 right-0 bg-background/90 text-[10px] font-bold px-1 rounded-tl">
+                {variant.id}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 overflow-auto">
+        <SelectedComponent {...defaultProps} />
+      </div>
+
+      <div className="hidden md:flex flex-col gap-3 p-4 w-32 bg-muted/30 border-l border-border overflow-y-auto">
+        {variants.map((variant) => {
+          const VariantComp = variant.component;
+          return (
+            <button
+              key={variant.id}
+              onClick={() => setSelectedVariant(variant.id)}
+              className={cn(
+                "relative w-full aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
+                selectedVariant === variant.id
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="absolute inset-0 pointer-events-none">
+                <div style={{ transform: 'scale(0.12)', transformOrigin: 'top left', width: '833%', height: '833%' }}>
+                  <VariantComp {...defaultProps} />
+                </div>
+              </div>
+              <div className="absolute bottom-1 right-1 bg-background/90 text-xs font-bold w-5 h-5 flex items-center justify-center rounded">
+                {variant.id}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default FinancialHeroShowcase;
+
+```
+
+
+## Tailwind Configuration
+
+Add the following global styles:
+
+```css
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+```
+
+Custom colors detected: gradient-to-b, muted-foreground, gradient-to-br, gradient-to-t, primary-foreground, accent-foreground, secondary-foreground
+Make sure these are defined in your Tailwind configuration.
+
+
+## Integration Instructions
+
+1. Review the App.tsx component to understand the complete implementation
+2. Identify which components and utilities you need for your use case
+3. Analyze the Tailwind v4 styles in index.css - integrate custom styles that differ from integrating Codebase
+4. Install the required NPM dependencies listed above
+5. Integrate the components into your project, adapting them to fit your architecture
+
+Focus on:
+- Understanding projects structure, adding above components into it
+- Understanding the component composition
+- Identifying reusable utilities and helpers
+- Adapting the styling to match your design system
