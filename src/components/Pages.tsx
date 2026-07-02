@@ -150,8 +150,13 @@ export function About({ go }: { go: (p: string) => void }) {
           <img
             src={tilesAction}
             alt="At the mahjong table"
-            className="w-full rounded-xl border object-contain"
-            style={{ borderColor: "#E3D7C2", maxHeight: "520px" }}
+            className="w-full object-contain"
+            style={{
+              borderRadius: "2rem",
+              maxHeight: "520px",
+              boxShadow: "0 8px 40px rgba(160,120,80,0.18), 0 2px 12px rgba(0,0,0,0.10)",
+              border: "2px solid #E3D7C2",
+            }}
           />
         </div>
       </div>
