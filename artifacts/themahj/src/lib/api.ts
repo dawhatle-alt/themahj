@@ -34,6 +34,39 @@ export interface RegistrationInput {
   phone?: string;
   seats: number;
   notes?: string;
+  discountCode?: string;
+}
+
+export interface AdminOrder {
+  id: string;
+  createdAt: string | null;
+  state: string;
+  paid: boolean;
+  totalCents: number;
+  currency: string;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  seats: number | null;
+  eventTitle: string | null;
+  eventDate: string | null;
+  registrationId: number | null;
+}
+
+export interface AdminDiscountCode {
+  id: number;
+  code: string;
+  discountPercent: number;
+  description: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface AdminRedemption {
+  id: number;
+  code: string;
+  email: string;
+  paid: boolean;
+  createdAt: string;
 }
 
 export interface ApiRegistration {
@@ -245,11 +278,8 @@ export async function adminDownloadCheckinReport(eventId: number): Promise<void>
 }
 
 // Upload flow: get a signed URL, PUT the file bytes straight to Supabase
-// Storage, then record the photo row with the returned object path.
-export async function adminUploadPhoto(
-  blob: Blob,
-  meta: { caption: string; eventLabel: string },
-): Promise<ApiPhoto> {
+// Storage, then return the object path to store wherever it's needed.
+export async function adminUploadImage(blob: Blob): Promise<string> {
   const { uploadURL, objectPath } = await request<{ uploadURL: string; objectPath: string }>(
     "/admin/storage/upload-url",
     { method: "POST", headers: adminHeaders() },
@@ -259,12 +289,73 @@ export async function adminUploadPhoto(
     body: blob,
     headers: { "Content-Type": blob.type || "image/jpeg" },
   });
-  if (!put.ok) throw new ApiError(put.status, "Photo upload failed");
+  if (!put.ok) throw new ApiError(put.status, "Image upload failed");
+  return objectPath;
+}
+
+export async function adminUploadPhoto(
+  blob: Blob,
+  meta: { caption: string; eventLabel: string },
+): Promise<ApiPhoto> {
+  const objectPath = await adminUploadImage(blob);
   const data = await request<{ photo: ApiPhoto }>(
     "/admin/gallery",
     jsonInit("POST", { objectPath, caption: meta.caption, eventLabel: meta.eventLabel }, adminHeaders()),
   );
   return data.photo;
+}
+
+// ---------- Admin: orders ----------
+
+export async function adminListOrders(): Promise<{ orders: AdminOrder[]; note?: string }> {
+  return request<{ orders: AdminOrder[]; note?: string }>("/admin/orders", { headers: adminHeaders() });
+}
+
+// ---------- Admin: discount codes ----------
+
+export async function adminListDiscountCodes(): Promise<AdminDiscountCode[]> {
+  const data = await request<{ codes: AdminDiscountCode[] }>("/admin/discount-codes", { headers: adminHeaders() });
+  return data.codes;
+}
+
+export async function adminCreateDiscountCode(input: {
+  code: string;
+  discountPercent: number;
+  description?: string;
+  active?: boolean;
+}): Promise<AdminDiscountCode> {
+  const data = await request<{ code: AdminDiscountCode }>(
+    "/admin/discount-codes",
+    jsonInit("POST", input, adminHeaders()),
+  );
+  return data.code;
+}
+
+export async function adminUpdateDiscountCode(
+  id: number,
+  input: { discountPercent?: number; description?: string; active?: boolean },
+): Promise<AdminDiscountCode> {
+  const data = await request<{ code: AdminDiscountCode }>(
+    `/admin/discount-codes/${id}`,
+    jsonInit("PUT", input, adminHeaders()),
+  );
+  return data.code;
+}
+
+export async function adminDeleteDiscountCode(id: number): Promise<void> {
+  await request<void>(`/admin/discount-codes/${id}`, { method: "DELETE", headers: adminHeaders() });
+}
+
+export async function adminListRedemptions(): Promise<AdminRedemption[]> {
+  const data = await request<{ redemptions: AdminRedemption[] }>(
+    "/admin/discount-redemptions",
+    { headers: adminHeaders() },
+  );
+  return data.redemptions;
+}
+
+export async function adminDeleteRedemption(id: number): Promise<void> {
+  await request<void>(`/admin/discount-redemptions/${id}`, { method: "DELETE", headers: adminHeaders() });
 }
 
 export async function adminDeletePhoto(id: number): Promise<void> {

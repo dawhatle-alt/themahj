@@ -1,10 +1,12 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, asc } from "drizzle-orm";
-import { db, eventsTable, registrationsTable } from "@workspace/db";
+import { eq, sql, asc, desc } from "drizzle-orm";
+import { db, eventsTable, registrationsTable, discountCodesTable } from "@workspace/db";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { requireAdmin, isValidAdminToken } from "../middleware/auth";
 import { logger } from "../lib/logger";
 import { sendCheckinReportEmail } from "../lib/email";
+import { listRedemptions, deleteRedemption } from "../lib/discounts";
+import { getSquareClient, getSquareLocationId, isSquareLocationConfigured } from "../lib/square";
 import { toApiEvent } from "./events";
 
 const router: IRouter = Router();
@@ -269,6 +271,206 @@ router.post("/admin/events/:id/checkin-report/email", requireAdmin, async (req, 
     logger.error({ err, eventId: id }, "Failed to email check-in report");
     res.status(500).json({ error: "Could not send the report email." });
   }
+});
+
+// --- Orders (pulled live from Square, joined to registrations) ---------------
+
+interface SquareOrderLike {
+  id?: string;
+  referenceId?: string;
+  state?: string;
+  createdAt?: string;
+  totalMoney?: { amount?: bigint | number | null; currency?: string };
+  tenders?: Array<{ id?: string }>;
+  lineItems?: Array<{ name?: string; quantity?: string }>;
+}
+
+router.get("/admin/orders", requireAdmin, async (_req, res): Promise<void> => {
+  const client = getSquareClient();
+  if (!client || !isSquareLocationConfigured()) {
+    res.json({ orders: [], note: "Square is not configured yet — orders will appear here once it is." });
+    return;
+  }
+
+  try {
+    const resp = (await client.orders.search({
+      locationIds: [getSquareLocationId()],
+      limit: 100,
+      query: {
+        filter: { stateFilter: { states: ["OPEN", "COMPLETED"] } },
+        sort: { sortField: "CREATED_AT", sortOrder: "DESC" },
+      },
+    })) as { orders?: SquareOrderLike[] };
+
+    const squareOrders = resp.orders ?? [];
+
+    // Join each Square order back to its registration (referenceId) for
+    // guest/event context.
+    const refIds = squareOrders
+      .map((o) => parseInt(o.referenceId ?? "", 10))
+      .filter((n) => !Number.isNaN(n));
+
+    const regs = refIds.length
+      ? await db
+          .select({
+            regId: registrationsTable.id,
+            name: registrationsTable.name,
+            email: registrationsTable.email,
+            seats: registrationsTable.seats,
+            status: registrationsTable.status,
+            eventTitle: eventsTable.title,
+            eventDate: eventsTable.date,
+          })
+          .from(registrationsTable)
+          .leftJoin(eventsTable, eq(registrationsTable.eventId, eventsTable.id))
+          .where(sql`${registrationsTable.id} IN (${sql.join(refIds.map((n) => sql`${n}`), sql`, `)})`)
+      : [];
+    const regById = new Map(regs.map((r) => [r.regId, r]));
+
+    res.json({
+      orders: squareOrders.map((o) => {
+        const reg = regById.get(parseInt(o.referenceId ?? "", 10));
+        return {
+          id: o.id ?? "",
+          createdAt: o.createdAt ?? null,
+          state: o.state ?? "UNKNOWN",
+          paid: Array.isArray(o.tenders) && o.tenders.length > 0,
+          totalCents: o.totalMoney?.amount != null ? Number(o.totalMoney.amount) : 0,
+          currency: o.totalMoney?.currency ?? "USD",
+          buyerName: reg?.name ?? null,
+          buyerEmail: reg?.email ?? null,
+          seats: reg?.seats ?? null,
+          eventTitle: reg?.eventTitle ?? o.lineItems?.[0]?.name ?? null,
+          eventDate: reg?.eventDate ?? null,
+          registrationId: reg?.regId ?? null,
+        };
+      }),
+    });
+  } catch (err) {
+    logger.error({ err }, "Failed to load orders from Square");
+    res.status(502).json({ error: "Could not load orders from Square." });
+  }
+});
+
+// --- Discount codes -----------------------------------------------------------
+
+function toApiCode(row: typeof discountCodesTable.$inferSelect) {
+  return {
+    id: row.id,
+    code: row.code,
+    discountPercent: row.discountPercent,
+    description: row.description ?? null,
+    active: row.active,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+router.get("/admin/discount-codes", requireAdmin, async (_req, res): Promise<void> => {
+  const codes = await db.select().from(discountCodesTable).orderBy(desc(discountCodesTable.createdAt));
+  res.json({ codes: codes.map(toApiCode) });
+});
+
+router.post("/admin/discount-codes", requireAdmin, async (req, res): Promise<void> => {
+  const { code, discountPercent, description, active } = req.body as {
+    code?: unknown; discountPercent?: unknown; description?: unknown; active?: unknown;
+  };
+  const cleanCode = typeof code === "string" ? code.trim().toUpperCase() : "";
+  const percent = Number(discountPercent);
+  if (!cleanCode || !/^[A-Z0-9_-]{2,40}$/.test(cleanCode)) {
+    res.status(400).json({ error: "Code must be 2-40 letters/numbers (dashes ok)." });
+    return;
+  }
+  if (!Number.isInteger(percent) || percent < 1 || percent > 100) {
+    res.status(400).json({ error: "Discount percent must be a whole number from 1 to 100." });
+    return;
+  }
+  try {
+    const [row] = await db
+      .insert(discountCodesTable)
+      .values({
+        code: cleanCode,
+        discountPercent: percent,
+        description: typeof description === "string" && description.trim() ? description.trim() : null,
+        active: active !== false,
+      })
+      .returning();
+    res.status(201).json({ code: toApiCode(row) });
+  } catch {
+    res.status(409).json({ error: "That code already exists." });
+  }
+});
+
+router.put("/admin/discount-codes/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const b = req.body as { discountPercent?: unknown; description?: unknown; active?: unknown };
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (b.discountPercent !== undefined) {
+    const percent = Number(b.discountPercent);
+    if (!Number.isInteger(percent) || percent < 1 || percent > 100) {
+      res.status(400).json({ error: "Discount percent must be a whole number from 1 to 100." });
+      return;
+    }
+    updateData.discountPercent = percent;
+  }
+  if (b.description !== undefined) {
+    updateData.description = typeof b.description === "string" && b.description.trim() ? b.description.trim() : null;
+  }
+  if (b.active !== undefined) updateData.active = b.active === true;
+  const [row] = await db
+    .update(discountCodesTable)
+    .set(updateData)
+    .where(eq(discountCodesTable.id, id))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "Code not found" });
+    return;
+  }
+  res.json({ code: toApiCode(row) });
+});
+
+router.delete("/admin/discount-codes/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const [row] = await db.delete(discountCodesTable).where(eq(discountCodesTable.id, id)).returning();
+  if (!row) {
+    res.status(404).json({ error: "Code not found" });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+router.get("/admin/discount-redemptions", requireAdmin, async (_req, res): Promise<void> => {
+  const rows = await listRedemptions();
+  res.json({
+    redemptions: rows.map((r) => ({
+      id: r.id,
+      code: r.code,
+      email: r.email,
+      paid: !!r.paidAt,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  });
+});
+
+router.delete("/admin/discount-redemptions/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id as string, 10);
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const ok = await deleteRedemption(id);
+  if (!ok) {
+    res.status(404).json({ error: "Redemption not found" });
+    return;
+  }
+  res.sendStatus(204);
 });
 
 // --- Image uploads ------------------------------------------------------------

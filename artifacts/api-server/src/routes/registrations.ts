@@ -3,6 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, eventsTable, registrationsTable } from "@workspace/db";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
+import { markRedemptionPaid } from "../lib/discounts";
 import { getSquareClient } from "../lib/square";
 import { logger } from "../lib/logger";
 
@@ -218,6 +219,8 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
         eventHost: evt.host,
         seats: reg.seats,
       });
+
+      await markRedemptionPaid(orderId);
 
       logger.info({ registrationId: id, orderId }, "Registration confirmed via payment verification");
       res.json({ status: "confirmed" });

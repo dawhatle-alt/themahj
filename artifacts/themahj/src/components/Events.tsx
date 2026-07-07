@@ -22,7 +22,7 @@ export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegiste
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState<ApiEvent | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", seats: 1, note: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", seats: 1, note: "", discountCode: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,7 +68,7 @@ export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegiste
     };
     try {
       if (selected.priceCents && selected.priceCents > 0) {
-        const { url } = await checkout(input);
+        const { url } = await checkout({ ...input, discountCode: form.discountCode.trim() || undefined });
         if (url) {
           // Off to Square's hosted checkout; it redirects back with ?confirmation=<id>
           window.location.href = url;
@@ -79,7 +79,7 @@ export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegiste
       }
       setConfirmed(selected.title);
       setSelected(null);
-      setForm({ name: "", email: "", phone: "", seats: 1, note: "" });
+      setForm({ name: "", email: "", phone: "", seats: 1, note: "", discountCode: "" });
       onRegistered();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -169,7 +169,12 @@ export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegiste
           {upcoming.map(ev => {
             const left = ev.spotsLeft;
             return (
-              <div key={ev.id} className="bg-white/70 border rounded-lg p-5" style={{ borderColor: "#E9DFD0" }}>
+              <div key={ev.id} className="bg-white/70 border rounded-lg overflow-hidden p-5" style={{ borderColor: "#E9DFD0" }}>
+                {ev.imagePath && (
+                  <img src={`/api/storage${ev.imagePath}`} alt={ev.title}
+                    className="w-full h-44 object-cover rounded-md -mt-0 mb-4 border" style={{ borderColor: "#E9DFD0" }}
+                    loading="lazy" />
+                )}
                 <div className="flex justify-between items-start gap-3 flex-wrap">
                   <div>
                     <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category).chip}`}>
@@ -225,6 +230,11 @@ export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegiste
                 </div>
                 <textarea className={inputCls} rows={2} placeholder="Anything we should know? (optional)"
                   value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} />
+                {isPaid && (
+                  <input className={inputCls + " uppercase"} placeholder="Discount code (optional)"
+                    value={form.discountCode}
+                    onChange={e => setForm({ ...form, discountCode: e.target.value.toUpperCase() })} />
+                )}
                 {isPaid && (
                   <p className="text-xs" style={{ color: "var(--ink-soft)" }}>
                     Total: <strong>{fmtPrice((selected.priceCents ?? 0) * form.seats)}</strong> — you'll be

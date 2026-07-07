@@ -4,6 +4,8 @@ import { db, eventsTable, registrationsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
 import { getSquareClient, getSquareLocationId, isSquareLocationConfigured, isSandboxMode } from "../lib/square";
+import { resolveDiscount, hasRedeemed, recordPendingRedemption, markRedemptionPaid } from "../lib/discounts";
+import { z } from "zod";
 import { RegistrationBody } from "./registrations";
 
 const router: IRouter = Router();
@@ -19,7 +21,9 @@ function getOrigin(req: Request): string {
   );
 }
 
-const RegistrationCheckoutBody = RegistrationBody.extend({});
+const RegistrationCheckoutBody = RegistrationBody.extend({
+  discountCode: z.string().optional(),
+});
 
 // Guest checkout for PAID events — creates a pending registration and returns a
 // Square-hosted payment link. Payment confirmation arrives via webhook or the
@@ -55,7 +59,26 @@ router.post(
       return;
     }
 
-    const { eventId, name, email, phone, seats, notes } = parsed.data;
+    const { eventId, name, email, phone, seats, notes, discountCode } = parsed.data;
+
+    // Validate the code up front so the guest hears "invalid code" instead of
+    // silently paying full price on Square's hosted page.
+    let discount: { code: string; percent: number } | null = null;
+    if (discountCode?.trim()) {
+      discount = await resolveDiscount(discountCode);
+      if (!discount) {
+        res.status(400).json({
+          error: "That discount code isn't valid. Double-check the code or remove it to continue.",
+        });
+        return;
+      }
+      if (await hasRedeemed(discount.code, email)) {
+        res.status(400).json({
+          error: "This discount code has already been used with that email address.",
+        });
+        return;
+      }
+    }
 
     const [event] = await db
       .select()
@@ -113,6 +136,18 @@ router.post(
               },
             ],
             referenceId: String(registration.id),
+            ...(discount
+              ? {
+                  discounts: [
+                    {
+                      name: `${discount.code} (${discount.percent}% off)`,
+                      type: "FIXED_PERCENTAGE" as const,
+                      percentage: String(discount.percent),
+                      scope: "ORDER" as const,
+                    },
+                  ],
+                }
+              : {}),
           },
           checkoutOptions: {
             // Embed the registration id ourselves so the confirmation page can
@@ -135,6 +170,17 @@ router.post(
           .update(registrationsTable)
           .set({ paymentSessionId: response.paymentLink?.id ?? null })
           .where(eq(registrationsTable.id, registration.id));
+
+        // Tie the discount to the Square order; it's marked consumed when the
+        // payment is captured (abandoned checkouts don't burn the code).
+        const linkOrderId = response.paymentLink?.orderId;
+        if (discount && linkOrderId) {
+          try {
+            await recordPendingRedemption(discount.code, email, linkOrderId);
+          } catch (err) {
+            logger.error({ err, code: discount.code }, "Failed to record pending discount redemption");
+          }
+        }
 
         res.json({ url, registrationId: registration.id });
       } else {
@@ -294,6 +340,8 @@ router.post(
             await confirmRegistration(registrationId, payment.id ?? null);
           }
         }
+
+        await markRedemptionPaid(payment.order_id);
       } catch (err) {
         logger.error({ err }, "Error processing Square payment webhook");
       }
