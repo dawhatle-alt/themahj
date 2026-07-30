@@ -421,7 +421,7 @@ export function Admin() {
 
       {/* EVENTS TAB */}
       {tab === "events" && (
-        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-10 mt-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 mt-8 items-start">
           <div className="bg-white/70 border rounded-lg p-6" style={{ borderColor: "#E9DFD0" }}>
             <h2 className="font-display text-2xl">{editing ? "Edit event" : "New event"}</h2>
             <div className="space-y-3 mt-4">
@@ -432,29 +432,42 @@ export function Admin() {
                 </select>
                 <input className={inputCls} type="date" value={draft.date} onChange={e => setDraft({ ...draft, date: e.target.value })} />
               </div>
-              <div className="flex gap-3 items-end">
-                <label className="flex-1 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+              {/* Wraps rather than stretching the column: time inputs have a wide
+                  intrinsic minimum, which on a phone pushed the whole card
+                  past the viewport. */}
+              <div className="flex flex-wrap gap-3 items-end">
+                <label className="flex-1 basis-[130px] min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
                   Starts
                   <input className={inputCls + " mt-1"} type="time" value={draft.startTime}
                     onChange={e => setDraft({ ...draft, startTime: e.target.value })} />
                 </label>
-                <label className="flex-1 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                <label className="flex-1 basis-[130px] min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
                   Ends
                   <input className={inputCls + " mt-1"} type="time" value={draft.endTime}
                     onChange={e => setDraft({ ...draft, endTime: e.target.value })} />
                 </label>
-                <input className={inputCls + " max-w-[130px]"} placeholder="Price $ (blank = free)" value={draft.price}
-                  onChange={e => setDraft({ ...draft, price: e.target.value })} aria-label="Price in dollars" />
+                <label className="w-full sm:w-auto sm:max-w-[140px] text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                  Price ($)
+                  <input className={inputCls + " mt-1"} placeholder="Blank = free" value={draft.price}
+                    onChange={e => setDraft({ ...draft, price: e.target.value })} />
+                </label>
               </div>
               {draft.startTime && (
                 <p className="text-[11px] -mt-1" style={{ color: "var(--ink-soft)" }}>
                   Shown on the site as <strong>{formatTimeRange(draft.startTime, draft.endTime)}</strong>
                 </p>
               )}
-              <div className="flex gap-3">
-                <input className={inputCls} placeholder="Location" value={draft.location} onChange={e => setDraft({ ...draft, location: e.target.value })} />
-                <input className={inputCls + " max-w-[110px]"} type="number" min={1} value={draft.totalSpots}
-                  onChange={e => setDraft({ ...draft, totalSpots: Number(e.target.value) || 1 })} aria-label="Seats" />
+              <div className="flex gap-3 items-end">
+                <label className="flex-1 min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                  Location
+                  <input className={inputCls + " mt-1"} value={draft.location}
+                    onChange={e => setDraft({ ...draft, location: e.target.value })} />
+                </label>
+                <label className="w-[92px] shrink-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                  Seats
+                  <input className={inputCls + " mt-1"} type="number" min={1} value={draft.totalSpots}
+                    onChange={e => setDraft({ ...draft, totalSpots: Number(e.target.value) || 1 })} />
+                </label>
               </div>
               <textarea className={inputCls} rows={3} placeholder="Description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} />
 
@@ -554,12 +567,47 @@ export function Admin() {
       )}
 
       {/* REGISTRATIONS TAB */}
-      {tab === "registrations" && (
-        <div className="mt-8 overflow-x-auto bg-white/70 border rounded-lg" style={{ borderColor: "#E9DFD0" }}>
-          {registrations.length === 0 ? (
-            <p className="p-8 text-sm text-center" style={{ color: "var(--ink-soft)" }}>No registrations yet — they'll appear here as guests reserve seats.</p>
-          ) : (
-            <table className="w-full text-sm">
+      {tab === "registrations" && registrations.length === 0 && (
+        <div className="mt-8 bg-white/70 border rounded-lg" style={{ borderColor: "#E9DFD0" }}>
+          <p className="p-8 text-sm text-center" style={{ color: "var(--ink-soft)" }}>No registrations yet — they'll appear here as guests reserve seats.</p>
+        </div>
+      )}
+
+      {/* Stacked cards on phones — the full table needs ~950px, which is most of
+          a phone screen spent sideways-scrolling at a check-in desk. */}
+      {tab === "registrations" && registrations.length > 0 && (
+        <div className="mt-8 space-y-3 md:hidden">
+          {registrations.map(s => (
+            <div key={s.id} className="bg-white/70 border rounded-lg p-4" style={{ borderColor: "#E9DFD0" }}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium">{s.name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--ink-soft)" }}>{s.eventTitle}</p>
+                </div>
+                <span className="text-xs shrink-0 text-right" style={{ color: s.status === "confirmed" ? "var(--jade)" : "var(--gold)" }}>
+                  {s.status}{s.paid ? " · paid" : ""}
+                </span>
+              </div>
+              <p className="text-sm mt-2 break-words">
+                <a className="underline" href={`mailto:${s.email}`}>{s.email}</a>
+                {s.phone && <> · <a className="underline" href={`tel:${s.phone}`}>{s.phone}</a></>}
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--ink-soft)" }}>
+                {s.seats} seat{s.seats === 1 ? "" : "s"}
+                {s.notes ? ` · ${s.notes}` : ""}
+              </p>
+              <button onClick={() => void removeRegistration(s.id)}
+                className="text-xs mt-2 underline underline-offset-2" style={{ color: "var(--crak)" }}>
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "registrations" && registrations.length > 0 && (
+        <div className="mt-8 overflow-x-auto bg-white/70 border rounded-lg hidden md:block" style={{ borderColor: "#E9DFD0" }}>
+          <table className="w-full text-sm">
               <thead>
                 <tr style={{ color: "var(--gold)" }}>
                   {["Event", "Name", "Email", "Phone", "Seats", "Status", "Note", ""].map(h => <th key={h} className={th}>{h}</th>)}
@@ -585,9 +633,8 @@ export function Admin() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          )}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -596,6 +643,11 @@ export function Admin() {
         <div className="mt-8">
           {ordersNote && (
             <p className="text-sm mb-4" style={{ color: "var(--ink-soft)" }}>{ordersNote}</p>
+          )}
+          {orders.length > 0 && (
+            <p className="text-[11px] mb-2 md:hidden" style={{ color: "var(--ink-soft)" }}>
+              Swipe the table sideways to see totals and status.
+            </p>
           )}
           <div className="overflow-x-auto bg-white/70 border rounded-lg" style={{ borderColor: "#E9DFD0" }}>
             {orders.length === 0 ? (
@@ -634,7 +686,7 @@ export function Admin() {
 
       {/* DISCOUNTS TAB */}
       {tab === "discounts" && (
-        <div className="mt-8 grid lg:grid-cols-[1fr_1.2fr] gap-10 items-start">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 items-start">
           <div className="space-y-6">
             <div className="bg-white/70 border rounded-lg p-6" style={{ borderColor: "#E9DFD0" }}>
               <h2 className="font-display text-2xl">New code</h2>
@@ -665,7 +717,9 @@ export function Admin() {
                 <div className="mt-3 space-y-2">
                   {redemptions.map(r => (
                     <div key={r.id} className="flex items-center justify-between gap-3 text-sm border-t pt-2" style={{ borderColor: "#EFE7DA" }}>
-                      <span className="truncate">
+                      {/* min-w-0 lets the flex item shrink; without it the nowrap
+                          from `truncate` sets the card's minimum width. */}
+                      <span className="min-w-0 flex-1 truncate">
                         <strong>{r.code}</strong> · {r.email}
                         <span className="ml-2 text-xs" style={{ color: r.paid ? "var(--jade)" : "var(--gold)" }}>
                           {r.paid ? "used" : "pending"}

@@ -48,16 +48,23 @@ const FACE: Record<string, JSX.Element> = {
   ),
 };
 
+// `size` accepts any CSS length so callers can pass a clamp() and let the tile
+// scale with the viewport; the inner svg is sized in percentages off the tile.
 export function Tile({ face, size = 84, className = "", rotate = 0 }: {
-  face: keyof typeof FACE; size?: number; className?: string; rotate?: number;
+  face: keyof typeof FACE; size?: number | string; className?: string; rotate?: number;
 }) {
+  const width = typeof size === "number" ? `${size}px` : size;
   return (
     <div
       className={`tile inline-flex items-center justify-center shrink-0 ${className}`}
-      style={{ width: size, height: size * 1.32, transform: rotate ? `rotate(${rotate}deg)` : undefined }}
+      style={{
+        width,
+        height: `calc(${width} * 1.32)`,
+        transform: rotate ? `rotate(${rotate}deg)` : undefined,
+      }}
       aria-hidden="true"
     >
-      <svg viewBox="0 0 100 104" width={size * 0.78} height={size * 1.05}>{FACE[face]}</svg>
+      <svg viewBox="0 0 100 104" width="78%" height="79.5%">{FACE[face]}</svg>
     </div>
   );
 }
@@ -80,6 +87,11 @@ const fanItem = (rot: number, lift: number): Variants => ({
   },
 });
 
+// Five overlapping tiles at a fixed 92px overflowed narrow viewports and forced
+// the whole page to scroll sideways; scale them with the viewport instead.
+const FAN_TILE_W = "clamp(52px, 15vw, 92px)";
+const FAN_OVERLAP = -0.196; // fraction of tile width, matches the original -18px at 92px
+
 export function TileFan() {
   const faces: (keyof typeof FACE)[] = ["bam", "crak", "dot", "flower", "joker"];
   const rots = [-14, -7, 0, 7, 14];
@@ -95,7 +107,11 @@ export function TileFan() {
       {faces.map((f, i) => (
         <motion.div
           key={f}
-          style={{ marginLeft: i ? -18 : 0, originX: "50%", originY: "100%" }}
+          style={{
+            marginLeft: i ? `calc(${FAN_TILE_W} * ${FAN_OVERLAP})` : 0,
+            originX: "50%",
+            originY: "100%",
+          }}
           variants={fanItem(rots[i], lifts[i])}
           whileHover={{
             y: lifts[i] - 22,
@@ -105,7 +121,7 @@ export function TileFan() {
             transition: { duration: 0.28, ease: "easeOut" },
           }}
         >
-          <Tile face={f} size={92} />
+          <Tile face={f} size={FAN_TILE_W} />
         </motion.div>
       ))}
     </motion.div>

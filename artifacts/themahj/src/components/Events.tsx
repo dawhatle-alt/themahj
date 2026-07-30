@@ -113,7 +113,9 @@ export function Events({ events, loadError, onRegistered }: {
         Tap any event to sign up.
       </motion.p>
 
-      <div className="grid lg:grid-cols-[1.15fr_1fr] gap-12 mt-10 items-start">
+      {/* grid-cols-1 rather than an implicit column: an auto column sizes to its
+          content's minimum, letting a stubborn child widen the whole page. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-12 mt-10 items-start">
         {/* Calendar */}
         <motion.div className="bg-white/70 border rounded-lg p-5" style={{ borderColor: "#E9DFD0" }}
           initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }}
@@ -138,12 +140,23 @@ export function Events({ events, loadError, onRegistered }: {
                   style={isToday ? { outline: "1.5px solid var(--rose)" } : undefined}>
                   <div className="text-xs" style={{ color: "var(--ink-soft)" }}>{cell.day}</div>
                   {evs.map(ev => (
-                    <button key={ev.id} onClick={() => openSignup(ev)}
-                      className="block w-full text-left text-[10px] leading-tight mt-1 px-1.5 py-1 rounded font-medium truncate"
-                      style={{ background: categoryMeta(ev.category).calendar, color: "#fff" }}
-                      title={ev.title}>
-                      {ev.title}
-                    </button>
+                    <div key={ev.id}>
+                      {/* A day cell is ~44px wide on a phone, where a title chip
+                          truncates to "M…" — show a colour-coded dot instead and
+                          let the list below carry the detail. */}
+                      <button onClick={() => openSignup(ev)}
+                        className="sm:hidden w-full py-1.5 flex justify-center"
+                        aria-label={`${ev.title} — reserve a seat`}>
+                        <span className="w-2 h-2 rounded-full block"
+                          style={{ background: categoryMeta(ev.category).calendar }} />
+                      </button>
+                      <button onClick={() => openSignup(ev)}
+                        className="hidden sm:block w-full text-left text-[10px] leading-tight mt-1 px-1.5 py-1 rounded font-medium truncate"
+                        style={{ background: categoryMeta(ev.category).calendar, color: "#fff" }}
+                        title={ev.title}>
+                        {ev.title}
+                      </button>
+                    </div>
                   ))}
                 </div>
               );
@@ -202,9 +215,12 @@ export function Events({ events, loadError, onRegistered }: {
                       {fmtDate(ev.date)} · {ev.time} · {ev.location}
                     </p>
                   </div>
-                  <div className="text-right">
+                  {/* Right-aligned beside the title on wide screens; once it wraps
+                      onto its own line a right-aligned block just looks indented,
+                      so read as one line instead. */}
+                  <div className="flex items-baseline gap-2 sm:block sm:text-right">
                     <p className="font-display text-2xl">{fmtPrice(ev.priceCents)}</p>
-                    <p className="text-xs mt-0.5" style={{ color: left === 0 ? "var(--crak)" : "var(--jade)" }}>
+                    <p className="text-xs sm:mt-0.5" style={{ color: left === 0 ? "var(--crak)" : "var(--jade)" }}>
                       {left === 0 ? "Sold out" : `${left} seat${left === 1 ? "" : "s"} left`}
                     </p>
                   </div>

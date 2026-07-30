@@ -103,3 +103,22 @@
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Form controls have an intrinsic minimum width derived from their `size`
+   attribute, which stops them shrinking inside a flex row and pushed the admin
+   cards wider than narrow viewports. Let them size from their container. */
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+/* iOS Safari zooms the page when focusing a control whose text is under 16px,
+   which knocks the signup dialog and admin forms off-centre mid-typing. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

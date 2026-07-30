@@ -19,7 +19,7 @@ export function Home({ events, go }: { events: ApiEvent[]; go: (p: string) => vo
   return (
     <div>
       {/* ── Hero ── */}
-      <section className="max-w-6xl mx-auto px-6 pt-14 pb-16 grid md:grid-cols-[1.2fr_1fr] gap-12 items-center">
+      <section className="max-w-6xl mx-auto px-6 pt-14 pb-16 grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-12 items-center">
         <div>
           <motion.p className="eyebrow"
             variants={reveal} custom={0} initial="hidden" animate="visible">
@@ -146,7 +146,7 @@ export function About({ go }: { go: (p: string) => void }) {
 
       {/* ── Two-column bio ── */}
       <div className="max-w-5xl mx-auto px-6 pt-12 pb-20">
-        <div className="grid md:grid-cols-[5fr_7fr] gap-14 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-14 items-start">
 
           {/* Portrait with decorative offset */}
           <motion.div className="relative"
