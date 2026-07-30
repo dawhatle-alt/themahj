@@ -7,7 +7,12 @@ export const eventsTable = pgTable("events", {
   title: text("title").notNull(),
   description: text("description").notNull().default(""),
   date: text("date").notNull(),
+  // Display string shown on the site ("6:30 – 8:30 PM"), generated from
+  // startTime/endTime. startTime is the authoritative 24-hour "HH:MM" value the
+  // reminder cron schedules against — never parse the display string.
   time: text("time").notNull(),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   location: text("location").notNull(),
   priceCents: integer("price_cents"),
   category: text("category").notNull().default("Class"),

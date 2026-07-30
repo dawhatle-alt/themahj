@@ -6,7 +6,9 @@ export interface ApiEvent {
   title: string;
   description: string;
   date: string; // YYYY-MM-DD
-  time: string;
+  time: string;             // display string, e.g. "6:30 – 8:30 PM"
+  startTime: string | null; // 24-hour "HH:MM" — what reminders schedule against
+  endTime: string | null;
   location: string;
   priceCents: number | null;
   category: string;
@@ -213,6 +215,8 @@ export type EventInput = {
   description: string;
   date: string;
   time: string;
+  startTime?: string | null;
+  endTime?: string | null;
   location: string;
   priceCents: number | null;
   category: string;

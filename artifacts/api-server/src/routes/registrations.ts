@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, gte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, eventsTable, registrationsTable } from "@workspace/db";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
@@ -54,7 +54,22 @@ router.post("/registrations", async (req, res): Promise<void> => {
     return;
   }
 
-  if (event.spotsLeft < seats) {
+  if (event.priceCents !== null && event.priceCents > 0) {
+    res.status(400).json({
+      error: "This is a paid event. Use POST /registrations/checkout to register.",
+    });
+    return;
+  }
+
+  // Claim the seats in a single conditional update so two guests racing for the
+  // last seat can't both succeed. A separate read-then-write would oversell.
+  const [claimed] = await db
+    .update(eventsTable)
+    .set({ spotsLeft: sql`${eventsTable.spotsLeft} - ${seats}` })
+    .where(and(eq(eventsTable.id, eventId), gte(eventsTable.spotsLeft, seats)))
+    .returning({ spotsLeft: eventsTable.spotsLeft });
+
+  if (!claimed) {
     res.status(409).json({
       error: event.spotsLeft <= 0
         ? "This event is sold out"
@@ -63,30 +78,28 @@ router.post("/registrations", async (req, res): Promise<void> => {
     return;
   }
 
-  if (event.priceCents !== null && event.priceCents > 0) {
-    res.status(400).json({
-      error: "This is a paid event. Use POST /registrations/checkout to register.",
-    });
-    return;
+  let reg;
+  try {
+    [reg] = await db
+      .insert(registrationsTable)
+      .values({
+        eventId,
+        name,
+        email,
+        phone: phone ?? null,
+        seats,
+        notes: notes ?? null,
+        status: "confirmed",
+      })
+      .returning();
+  } catch (err) {
+    // Hand the seats back rather than leaking capacity on a failed insert.
+    await db
+      .update(eventsTable)
+      .set({ spotsLeft: sql`LEAST(${eventsTable.totalSpots}, ${eventsTable.spotsLeft} + ${seats})` })
+      .where(eq(eventsTable.id, eventId));
+    throw err;
   }
-
-  const [reg] = await db
-    .insert(registrationsTable)
-    .values({
-      eventId,
-      name,
-      email,
-      phone: phone ?? null,
-      seats,
-      notes: notes ?? null,
-      status: "confirmed",
-    })
-    .returning();
-
-  await db
-    .update(eventsTable)
-    .set({ spotsLeft: sql`GREATEST(0, ${eventsTable.spotsLeft} - ${seats})` })
-    .where(eq(eventsTable.id, eventId));
 
   await sendRegistrationConfirmationEmail({
     registrantName: name,
@@ -203,6 +216,13 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
         .update(registrationsTable)
         .set({ status: "confirmed" })
         .where(eq(registrationsTable.id, id));
+
+      if (evt.spotsLeft < reg.seats) {
+        logger.error(
+          { eventId: reg.eventId, registrationId: id, seats: reg.seats, spotsLeft: evt.spotsLeft },
+          "Event oversold: confirming a paid registration beyond remaining capacity",
+        );
+      }
 
       await db
         .update(eventsTable)

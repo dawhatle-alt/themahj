@@ -11,6 +11,8 @@ export function toApiEvent(row: typeof eventsTable.$inferSelect) {
     description: row.description,
     date: row.date,
     time: row.time,
+    startTime: row.startTime ?? null,
+    endTime: row.endTime ?? null,
     location: row.location,
     priceCents: row.priceCents ?? null,
     category: row.category,

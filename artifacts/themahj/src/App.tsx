@@ -49,11 +49,14 @@ function pendingConfirmationId(): number | null {
 export default function App() {
   const [page, setPage] = useState<string>(() => (pendingConfirmationId() !== null ? "events" : "home"));
   const [events, setEvents] = useState<ApiEvent[]>([]);
+  const [eventsError, setEventsError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmationId, setConfirmationId] = useState<number | null>(() => pendingConfirmationId());
 
   const refreshEvents = useCallback(() => {
-    listEvents().then(setEvents).catch(() => setEvents([]));
+    listEvents()
+      .then((rows) => { setEvents(rows); setEventsError(false); })
+      .catch(() => { setEvents([]); setEventsError(true); });
   }, []);
 
   useEffect(() => {
@@ -184,7 +187,7 @@ export default function App() {
           >
             {page === "home"    && <Home events={events} go={go} />}
             {page === "about"   && <About go={go} />}
-            {page === "events"  && <Events events={events} onRegistered={refreshEvents} />}
+            {page === "events"  && <Events events={events} loadError={eventsError} onRegistered={refreshEvents} />}
             {page === "troop"   && <Troop go={go} />}
             {page === "gallery" && <Gallery />}
             {page === "admin"   && <Admin />}

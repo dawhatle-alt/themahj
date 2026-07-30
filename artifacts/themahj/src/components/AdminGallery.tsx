@@ -12,7 +12,7 @@ import {
   adminListRegistrations, adminLogin, adminUpdateDiscountCode, adminUpdateEvent,
   adminUploadImage, adminUploadPhoto, getAdminToken, listGallery, setAdminToken,
 } from "@/lib/api";
-import { CATEGORIES, categoryMeta, fmtDate, fmtPrice } from "@/lib/data";
+import { CATEGORIES, REMINDER_OPTIONS, categoryMeta, fmtDate, fmtPrice, formatTimeRange } from "@/lib/data";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -107,18 +107,21 @@ type EventDraft = {
   title: string;
   category: string;
   date: string;
-  time: string;
+  startTime: string;   // 24-hour "HH:MM" from <input type="time">
+  endTime: string;
   location: string;
   price: string;       // dollars as typed; blank = free
   totalSpots: number;
   description: string;
   published: boolean;
   imagePath: string | null;
+  reminderHoursBefore: number | null;
 };
 
 const emptyEvent = (): EventDraft => ({
-  title: "", category: "Open Play", date: "", time: "", location: "Leander, TX",
-  price: "15", totalSpots: 16, description: "", published: true, imagePath: null,
+  title: "", category: "Open Play", date: "", startTime: "", endTime: "",
+  location: "Leander, TX", price: "15", totalSpots: 16, description: "",
+  published: true, imagePath: null, reminderHoursBefore: 24,
 });
 
 function draftToInput(d: EventDraft): EventInput {
@@ -127,13 +130,18 @@ function draftToInput(d: EventDraft): EventInput {
     title: d.title.trim(),
     category: d.category,
     date: d.date,
-    time: d.time.trim(),
+    // The display string is derived so it can never disagree with the start time
+    // the reminder cron schedules against.
+    time: formatTimeRange(d.startTime, d.endTime),
+    startTime: d.startTime || null,
+    endTime: d.endTime || null,
     location: d.location.trim(),
     priceCents: Number.isFinite(dollars) && dollars > 0 ? Math.round(dollars * 100) : null,
     totalSpots: d.totalSpots,
     description: d.description.trim(),
     published: d.published,
     imagePath: d.imagePath,
+    reminderHoursBefore: d.reminderHoursBefore,
   };
 }
 
@@ -230,13 +238,15 @@ export function Admin() {
       title: ev.title,
       category: ev.category,
       date: ev.date,
-      time: ev.time,
+      startTime: ev.startTime ?? "",
+      endTime: ev.endTime ?? "",
       location: ev.location,
       price: ev.priceCents ? String(ev.priceCents / 100) : "",
       totalSpots: ev.totalSpots,
       description: ev.description,
       published: ev.published,
       imagePath: ev.imagePath,
+      reminderHoursBefore: ev.reminderHoursBefore,
     });
   }
 
@@ -422,11 +432,25 @@ export function Admin() {
                 </select>
                 <input className={inputCls} type="date" value={draft.date} onChange={e => setDraft({ ...draft, date: e.target.value })} />
               </div>
-              <div className="flex gap-3">
-                <input className={inputCls} placeholder="Time (e.g. 6:30 – 8:30 PM)" value={draft.time} onChange={e => setDraft({ ...draft, time: e.target.value })} />
+              <div className="flex gap-3 items-end">
+                <label className="flex-1 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                  Starts
+                  <input className={inputCls + " mt-1"} type="time" value={draft.startTime}
+                    onChange={e => setDraft({ ...draft, startTime: e.target.value })} />
+                </label>
+                <label className="flex-1 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                  Ends
+                  <input className={inputCls + " mt-1"} type="time" value={draft.endTime}
+                    onChange={e => setDraft({ ...draft, endTime: e.target.value })} />
+                </label>
                 <input className={inputCls + " max-w-[130px]"} placeholder="Price $ (blank = free)" value={draft.price}
                   onChange={e => setDraft({ ...draft, price: e.target.value })} aria-label="Price in dollars" />
               </div>
+              {draft.startTime && (
+                <p className="text-[11px] -mt-1" style={{ color: "var(--ink-soft)" }}>
+                  Shown on the site as <strong>{formatTimeRange(draft.startTime, draft.endTime)}</strong>
+                </p>
+              )}
               <div className="flex gap-3">
                 <input className={inputCls} placeholder="Location" value={draft.location} onChange={e => setDraft({ ...draft, location: e.target.value })} />
                 <input className={inputCls + " max-w-[110px]"} type="number" min={1} value={draft.totalSpots}
@@ -452,6 +476,27 @@ export function Admin() {
                 )}
                 {coverUploading && <p className="text-xs mt-2" style={{ color: "var(--ink-soft)" }}>Uploading…</p>}
               </div>
+
+              <label className="block text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                Reminder email
+                <select className={inputCls + " mt-1"} value={draft.reminderHoursBefore ?? ""}
+                  onChange={e => setDraft({ ...draft, reminderHoursBefore: e.target.value ? Number(e.target.value) : null })}>
+                  {REMINDER_OPTIONS.map(o => (
+                    <option key={o.label} value={o.hours ?? ""}>{o.label}</option>
+                  ))}
+                </select>
+              </label>
+              {draft.reminderHoursBefore !== null && (
+                !draft.startTime ? (
+                  <p className="text-[11px] -mt-1" style={{ color: "var(--crak)" }}>
+                    Set a start time so the reminder can be scheduled.
+                  </p>
+                ) : (
+                  <p className="text-[11px] -mt-1" style={{ color: "var(--ink-soft)" }}>
+                    Reminders are sent in the morning to everyone confirmed for this event.
+                  </p>
+                )
+              )}
 
               <label className="flex items-center gap-2 text-sm" style={{ color: "var(--ink-soft)" }}>
                 <input type="checkbox" checked={draft.published} onChange={e => setDraft({ ...draft, published: e.target.checked })} />

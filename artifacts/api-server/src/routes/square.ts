@@ -229,6 +229,16 @@ async function confirmRegistration(registrationId: number, paymentId: string | n
     .where(eq(eventsTable.id, reg.eventId))
     .limit(1);
 
+  // Paid seats are only claimed once payment clears, so concurrent checkouts can
+  // together exceed capacity. We always honour a completed payment — but surface
+  // it so the host can add a chair or arrange a refund.
+  if (evt && evt.spotsLeft < reg.seats) {
+    logger.error(
+      { eventId: reg.eventId, registrationId, seats: reg.seats, spotsLeft: evt.spotsLeft },
+      "Event oversold: confirming a paid registration beyond remaining capacity",
+    );
+  }
+
   await db
     .update(eventsTable)
     .set({ spotsLeft: sql`GREATEST(0, ${eventsTable.spotsLeft} - ${reg.seats})` })

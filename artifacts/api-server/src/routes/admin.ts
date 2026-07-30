@@ -47,6 +47,8 @@ router.post("/admin/events", requireAdmin, async (req, res): Promise<void> => {
       description: (b.description as string) ?? "",
       date: b.date as string,
       time: (b.time as string) ?? "",
+      startTime: (b.startTime as string | null) ?? null,
+      endTime: (b.endTime as string | null) ?? null,
       location: (b.location as string) ?? "",
       priceCents: b.priceCents != null ? Number(b.priceCents) : null,
       category: (b.category as string) ?? "Class",
@@ -74,6 +76,8 @@ router.put("/admin/events/:id", requireAdmin, async (req, res): Promise<void> =>
   if (b.description !== undefined) updateData.description = b.description;
   if (b.date !== undefined) updateData.date = b.date;
   if (b.time !== undefined) updateData.time = b.time;
+  if (b.startTime !== undefined) updateData.startTime = b.startTime ?? null;
+  if (b.endTime !== undefined) updateData.endTime = b.endTime ?? null;
   if (b.location !== undefined) updateData.location = b.location;
   if ("priceCents" in b) updateData.priceCents = b.priceCents != null ? Number(b.priceCents) : null;
   if (b.category !== undefined) updateData.category = b.category;

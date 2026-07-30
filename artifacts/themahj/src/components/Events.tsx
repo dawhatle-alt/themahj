@@ -17,7 +17,11 @@ function monthLabel(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegistered: () => void }) {
+export function Events({ events, loadError, onRegistered }: {
+  events: ApiEvent[];
+  loadError: boolean;
+  onRegistered: () => void;
+}) {
   const today = new Date();
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState<ApiEvent | null>(null);
@@ -160,10 +164,23 @@ export function Events({ events, onRegistered }: { events: ApiEvent[]; onRegiste
           transition={{ duration: 0.7, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}>
           {upcoming.length === 0 && (
             <div className="bg-white/70 border rounded-lg p-8 text-center" style={{ borderColor: "#E9DFD0" }}>
-              <p className="font-display italic text-2xl">Nothing on the calendar yet</p>
-              <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
-                New classes and open play nights are announced here — check back soon.
-              </p>
+              {loadError ? (
+                <>
+                  <p className="font-display italic text-2xl">We couldn't load the calendar</p>
+                  <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
+                    Something went wrong on our end — please refresh, or email{" "}
+                    <a className="underline" href="mailto:hello@mahjeditco.com">hello@mahjeditco.com</a>{" "}
+                    and we'll get you a seat.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-display italic text-2xl">Nothing on the calendar yet</p>
+                  <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
+                    New classes and open play nights are announced here — check back soon.
+                  </p>
+                </>
+              )}
             </div>
           )}
           {upcoming.map(ev => {

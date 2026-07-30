@@ -35,7 +35,7 @@ export function Home({ events, go }: { events: ApiEvent[]; go: (p: string) => vo
             className="mt-6 text-lg max-w-md"
             style={{ color: "var(--ink-soft)" }}
             variants={reveal} custom={0.2} initial="hidden" animate="visible">
-            The Mahj is a home for American mahjong in the north Austin hill country —
+            The Mahj Edit is a home for American mahjong in the north Austin hill country —
             beginner classes, open play nights, and Troop Mahjong evenings with a little extra sparkle.
           </motion.p>
           <motion.div className="mt-8 flex flex-wrap gap-4"
@@ -262,7 +262,7 @@ export function Troop({ go }: { go: (p: string) => void }) {
           variants={reveal} custom={0.18} initial="hidden" animate="visible">
           Troop Mahjong is a national social club founded by Kristel Powell in San Antonio,
           inspired by <em>Troop Beverly Hills</em> — American mahjong with themed events,
-          friendship, and community for women. The Mahj is proud to bring the Troop experience
+          friendship, and community for women. The Mahj Edit is proud to bring the Troop experience
           to the Leander &amp; north Austin area.
         </motion.p>
         <motion.div className="hairline mt-10"

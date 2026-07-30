@@ -17,7 +17,13 @@ pnpm monorepo, deployed on Vercel:
 
 - **Free events**: guest fills name/email/seats → registration saved as `confirmed`, seats decremented, confirmation email sent via Resend.
 - **Paid events**: a `pending` registration is created and the guest is redirected to a Square-hosted payment link. Square redirects back to `/?confirmation=<id>`; the Square webhook (`/api/webhooks/square`) — with a polling fallback on the confirmation dialog — flips the registration to `confirmed`, decrements seats, and sends the email.
-- **Reminder emails**: set "reminder hours before" on an event; `/api/cron/reminders` (Vercel Cron, daily at 14:00 UTC — see `vercel.json`) sends reminders to confirmed guests once due.
+- **Reminder emails**: pick a reminder option on the event; `/api/cron/reminders`
+  (Vercel Cron, daily at 14:00 UTC ≈ 9am Central — see `vercel.json`) mails
+  everyone confirmed once it comes due. Scheduling uses the event's `start_time`
+  interpreted in `EVENT_TIMEZONE` (default `America/Chicago`), never the
+  free-text display string. Vercel's Hobby plan permits only one cron run per
+  day, so the admin options are day-scale and labelled by when mail actually
+  lands; hour-scale lead times need a Pro plan and a more frequent schedule.
 - **Admin**: passcode login (checked against `ADMIN_TOKEN`), event CRUD, signups table, per-event check-in CSV, photo gallery uploads to Supabase Storage.
 
 ## Local development
@@ -46,6 +52,7 @@ pnpm run dev:web   # Vite on :5000, proxies /api → :3001
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` | recommended | From the Square webhook subscription |
 | `SQUARE_WEBHOOK_URL` | recommended | `https://mahjeditco.com/api/webhooks/square` |
 | `CRON_SECRET` | recommended | Protects `/api/cron/reminders`; Vercel sends it automatically |
+| `EVENT_TIMEZONE` | optional | IANA zone events are scheduled in; defaults to `America/Chicago` |
 
 ## Service ownership
 
