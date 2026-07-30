@@ -2,6 +2,13 @@
 
 Events site for **The Mahj Edit** (American mahjong classes, open play, and Troop Mahjong nights in Leander, TX). Guests browse the calendar and reserve seats — free events confirm instantly, paid events check out through Square. The owner manages everything from the built-in admin panel (footer → Admin).
 
+## Going live
+
+[docs/launch-checklist.md](docs/launch-checklist.md) is the ordered checklist for
+taking the site live — Square, DNS, environment variables, and an end-to-end smoke
+test. [docs/client-prep.md](docs/client-prep.md) is the client-facing companion,
+safe to send as-is.
+
 ## Structure
 
 pnpm monorepo, deployed on Vercel:

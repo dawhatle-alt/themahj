@@ -1,10 +1,26 @@
-# Square setup — what to bring
+# Getting your site ready to launch — what to bring
 
-We'll create your Square account together so the website can take payments for
-classes and events. **You will create and own the account**, and you'll be the
+When we meet we'll set up three things: **payments** (Square), **your domain**
+(mahjeditco.com), and **your first classes and events**.
+
+On payments: **you will create and own the Square account**, and you'll be the
 one typing in your bank and tax details — they aren't shared with anyone else.
 All the website needs afterward is a set of API keys, which you can revoke or
 regenerate yourself at any time.
+
+## Before we meet — one thing to send
+
+**Please invite me to your GoDaddy account as a delegate.** This lets me update
+your domain settings without ever knowing your password, and you can remove the
+access whenever you like:
+
+1. Sign in to GoDaddy
+2. Go to **Account Settings → Delegate Access**
+3. Choose **Invite to Access**, enter my email address, and select the
+   **Domains** permission level
+
+If you'd rather not, we can do it together at the meeting — but you'll need to be
+on hand to approve the login, and again for every future DNS change.
 
 Please have the following ready before we meet.
 
@@ -56,6 +72,24 @@ Square uses two-factor authentication. You'll need your phone to receive a
 verification code, and we'll set up 2FA on **your** device. Save the recovery
 codes somewhere only you can get to.
 
+## 6. Your first events
+
+So we can put real content on the site before it goes live, bring details for
+the next few classes and events:
+
+- Title, date, **start and end time**, and location
+- Price per seat (or free)
+- How many seats
+- A short description — a few sentences is plenty
+- Optionally a photo for each event, and any past-event photos for the gallery
+
+## 7. An admin passcode
+
+You'll use this to sign in and manage your own events. Pick something long that
+you'll remember — a short phrase works better than a password. Anyone with it
+can see your registrations, so treat it accordingly, and save it in your password
+manager rather than a note.
+
 ## Decisions we'll make together
 
 - **Statement descriptor** — confirm what customers see on their card statement
@@ -65,6 +99,9 @@ codes somewhere only you can get to.
   signup. Online/card-not-present transactions carry a per-transaction
   percentage plus a flat fee, deducted before deposit; worth knowing so class
   pricing accounts for it.
+- **Where student replies should go** — confirmation emails will be sent from
+  your domain with a reply-to address. If `hello@mahjeditco.com` isn't a mailbox
+  you actually check, tell me which address to use instead.
 
 ## What I'll take away
 
