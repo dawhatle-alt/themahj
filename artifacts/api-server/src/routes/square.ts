@@ -310,6 +310,7 @@ router.post(
             id?: string;
             order_id?: string;
             status?: string;
+            location_id?: string;
           };
         };
       };
@@ -318,10 +319,27 @@ router.post(
     const eventType = event.type;
     const payment = event.data?.object?.payment;
 
-    // Handle both payment.completed and payment.updated (status=COMPLETED)
+    // Square delivers webhooks for every location on the account, and an account
+    // can host more than one business's site. Registration ids are per-site
+    // serials, so an unfiltered event could confirm an unrelated registration
+    // that merely shares an id — only ever act on our own location.
+    const ourLocation = getSquareLocationId();
+    if (ourLocation && payment?.location_id && payment.location_id !== ourLocation) {
+      logger.info(
+        { paymentLocation: payment.location_id },
+        "Ignoring Square webhook for a different location",
+      );
+      res.json({ received: true });
+      return;
+    }
+
+    // Square's payment event types are payment.created and payment.updated; a
+    // single-step card payment can arrive already COMPLETED on creation, so gate
+    // on the payment status rather than the event name. Repeat deliveries are
+    // safe: confirmRegistration only acts on "pending" rows and
+    // markRedemptionPaid only stamps unconsumed redemptions.
     const isPaymentCompleted =
-      eventType === "payment.completed" ||
-      (eventType === "payment.updated" && payment?.status === "COMPLETED");
+      eventType?.startsWith("payment.") === true && payment?.status === "COMPLETED";
 
     if (isPaymentCompleted && payment?.order_id) {
       try {

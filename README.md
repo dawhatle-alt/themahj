@@ -47,6 +47,35 @@ pnpm run dev:web   # Vite on :5000, proxies /api → :3001
 | `SQUARE_WEBHOOK_URL` | recommended | `https://mahjeditco.com/api/webhooks/square` |
 | `CRON_SECRET` | recommended | Protects `/api/cron/reminders`; Vercel sends it automatically |
 
+## Service ownership
+
+This site is run as managed hosting: the infrastructure accounts stay with the
+operator, but anything tied to money or identity belongs to the client.
+
+| Service | Owned by | Why |
+|---|---|---|
+| Vercel, Supabase, Resend | Operator | Part of the hosting service being provided |
+| **Square** | **Client** | Deposits go to the client's bank; revenue is reported under the client's tax ID |
+| mahjeditco.com | Client | The client should never be locked out of their own domain |
+
+The operator holds only Square **API credentials** (access token, location ID,
+webhook signature key) — never the client's bank details, tax ID, or Square
+login. The client can rotate or revoke that token from their own dashboard at
+any time, which is the intended kill switch.
+
+Do not run this site's payments through a Square account belonging to another
+business: Square webhooks are account-wide and registration ids are per-site
+serials, deposits and 1099-K reporting would land under the wrong entity, and a
+location cannot later be split out into its own account.
+
+## Testing payments without the client's account
+
+Set `SQUARE_ENVIRONMENT=sandbox` with sandbox credentials from any developer
+account to exercise the whole paid-registration path (checkout, webhook,
+discount codes) using Square's test cards. Going live is then a swap of
+`SQUARE_ACCESS_TOKEN`, `SQUARE_LOCATION_ID`, `SQUARE_WEBHOOK_SIGNATURE_KEY`, and
+`SQUARE_ENVIRONMENT=production` — no code changes.
+
 ## Square webhook setup
 
 In the Square Developer Dashboard create a webhook subscription pointing at
