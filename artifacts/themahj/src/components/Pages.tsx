@@ -157,6 +157,7 @@ export function About({ go }: { go: (p: string) => void }) {
             <img
               src={portrait}
               alt="Rhonda, founder of The Mahj Edit"
+              decoding="async"
               className="relative w-full object-cover rounded-3xl"
               style={{
                 aspectRatio: "3/4", objectPosition: "top", zIndex: 1,
@@ -227,6 +228,8 @@ export function About({ go }: { go: (p: string) => void }) {
         <img
           src={tilesAction}
           alt="At the mahjong table"
+          loading="lazy"
+          decoding="async"
           className="w-full object-contain"
           style={{
             borderRadius: "2rem",
