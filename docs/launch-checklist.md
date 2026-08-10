@@ -92,12 +92,44 @@ wait.
 
 **Then the secondary domains:**
 
-- [ ] `mahjeditco.com` → Domain → **Products** → Connect Domain: forward to
-      `https://themahjeditco.com` (permanent / 301, forward with masking **off**)
-- [ ] Same for any other domains the client owns
+The client owns at least five domains, spread across **three separate GoDaddy
+accounts**. Known as of 2026-08-10:
+
+| Domain | Role |
+|---|---|
+| `themahjeditco.com` | **canonical** — the live site |
+| `mahjeditco.com` | redirect ✅ done |
+| `themahjeditofficial.com` | had a Website Builder site attached |
+| `mahjeditofficial.com` | parked lander |
+| `themahjedit.net` | had a Website Builder site attached |
+
+- [ ] **Consolidate the three GoDaddy accounts into one.** Moving a domain
+      between GoDaddy accounts is an internal account change — free, immediate,
+      and *not* a registrar transfer, so no 60-day lock. Do this before the DNS
+      work: one login, one delegate invite, one renewal calendar
+- [ ] Check whether the Website Builder sites are on **paid** plans — the client
+      may be paying monthly for placeholder pages. Export any email signups
+      before disconnecting them
+- [ ] Decide which domains are worth renewing at all (~$20–25/year each) rather
+      than renewing all five by default
+- [ ] For each non-canonical domain: clear whatever owns the apex (builder site
+      or forwarding rule), set `A` `@` → `216.150.1.1` and `CNAME` `www` →
+      `cname.vercel-dns.com`, then add both hosts in Vercel as **308 redirects**
+      to `themahjeditco.com`
+      - GoDaddy forwarding is the lower-effort alternative but cannot serve a
+        valid certificate — `https://` on those domains would warn. Prefer the
+        Vercel redirect, and do not mix the two approaches
 - [ ] The Resend DKIM/SPF/MX records left on `mahjeditco.com` are now dead
       weight — harmless, but remove them so the zone doesn't imply mail is sent
       from there
+
+**Renewal — the largest ongoing risk in the whole setup:**
+
+- [ ] Turn on **auto-renew for `themahjeditco.com`** and confirm the payment
+      method on file is current. DNS, SSL, Resend verification, and the Square
+      webhook URL are all anchored to that one registration; if it lapses the
+      site goes dark and the domain becomes available to anyone
+- [ ] Confirm the client — not the operator — is the registrant of record
 
 **Then confirm (after propagation):**
 
