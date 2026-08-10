@@ -1,7 +1,7 @@
 # Getting your site ready to launch — what to bring
 
 When we meet we'll set up three things: **payments** (Square), **your domain**
-(mahjeditco.com), and **your first classes and events**.
+(themahjeditco.com), and **your first classes and events**.
 
 On payments: **you will create and own the Square account**, and you'll be the
 one typing in your bank and tax details — they aren't shared with anyone else.
@@ -100,7 +100,7 @@ manager rather than a note.
   percentage plus a flat fee, deducted before deposit; worth knowing so class
   pricing accounts for it.
 - **Where student replies should go** — confirmation emails will be sent from
-  your domain with a reply-to address. If `hello@mahjeditco.com` isn't a mailbox
+  your domain with a reply-to address. If `hello@themahjeditco.com` isn't a mailbox
   you actually check, tell me which address to use instead.
 
 ## What I'll take away

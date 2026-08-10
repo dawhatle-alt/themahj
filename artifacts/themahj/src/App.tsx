@@ -214,7 +214,7 @@ export default function App() {
 
           <div className="text-sm leading-relaxed" style={{ color: "#8A7260" }}>
             <p>Leander, Texas</p>
-            <p>hello@mahjeditco.com</p>
+            <p>hello@themahjeditco.com</p>
             <p className="mt-2 text-xs" style={{ color: "#5C4A3A" }}>
               © {new Date().getFullYear()} The Mahj Edit. All rights reserved.
             </p>

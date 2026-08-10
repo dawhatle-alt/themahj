@@ -1,4 +1,4 @@
-# The Mahj Edit — mahjeditco.com
+# The Mahj Edit — themahjeditco.com
 
 Events site for **The Mahj Edit** (American mahjong classes, open play, and Troop Mahjong nights in Leander, TX). Guests browse the calendar and reserve seats — free events confirm instantly, paid events check out through Square. The owner manages everything from the built-in admin panel (footer → Admin).
 
@@ -49,15 +49,15 @@ pnpm run dev:web   # Vite on :5000, proxies /api → :3001
 | `SUPABASE_URL` | ✅ | `https://bjrmimkbeyvhgyofjmiw.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Dashboard → Settings → API keys (needed for photo uploads) |
 | `ADMIN_TOKEN` | ✅ | The admin panel passcode — pick a strong one |
-| `RESEND_API_KEY` | ✅ for emails | Verify the `mahjeditco.com` domain in Resend first |
-| `EMAIL_FROM` | optional | Defaults to `noreply@mahjeditco.com` |
-| `OWNER_EMAIL` | optional | Reply-to address; defaults to `hello@mahjeditco.com` |
-| `PUBLIC_WEB_ORIGIN` | ✅ in prod | `https://mahjeditco.com` |
+| `RESEND_API_KEY` | ✅ for emails | Verify the `themahjeditco.com` domain in Resend first |
+| `EMAIL_FROM` | optional | Defaults to `noreply@themahjeditco.com` |
+| `OWNER_EMAIL` | optional | Reply-to address; defaults to `hello@themahjeditco.com` |
+| `PUBLIC_WEB_ORIGIN` | ✅ in prod | `https://themahjeditco.com` |
 | `SQUARE_ACCESS_TOKEN` | ✅ for paid events | Square Developer Dashboard → the new production app |
 | `SQUARE_LOCATION_ID` | ✅ for paid events | Square Dashboard → Locations |
 | `SQUARE_ENVIRONMENT` | ✅ | `production` (anything else = sandbox) |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` | recommended | From the Square webhook subscription |
-| `SQUARE_WEBHOOK_URL` | recommended | `https://mahjeditco.com/api/webhooks/square` |
+| `SQUARE_WEBHOOK_URL` | recommended | `https://themahjeditco.com/api/webhooks/square` |
 | `CRON_SECRET` | recommended | Protects `/api/cron/reminders`; Vercel sends it automatically |
 | `EVENT_TIMEZONE` | optional | IANA zone events are scheduled in; defaults to `America/Chicago` |
 
@@ -70,7 +70,11 @@ operator, but anything tied to money or identity belongs to the client.
 |---|---|---|
 | Vercel, Supabase, Resend | Operator | Part of the hosting service being provided |
 | **Square** | **Client** | Deposits go to the client's bank; revenue is reported under the client's tax ID |
-| mahjeditco.com | Client | The client should never be locked out of their own domain |
+| themahjeditco.com (and mahjeditco.com) | Client | The client should never be locked out of their own domain |
+
+`themahjeditco.com` is the canonical host — it is the address the client has been
+promoting, so it is what appears in emails, share previews, and the Square
+webhook. `mahjeditco.com` is owned by the client too and forwards to it.
 
 The operator holds only Square **API credentials** (access token, location ID,
 webhook signature key) — never the client's bank details, tax ID, or Square
@@ -93,8 +97,11 @@ discount codes) using Square's test cards. Going live is then a swap of
 ## Square webhook setup
 
 In the Square Developer Dashboard create a webhook subscription pointing at
-`https://mahjeditco.com/api/webhooks/square` for the events `payment.completed` and
+`https://themahjeditco.com/api/webhooks/square` for the events `payment.created` and
 `payment.updated`, then copy its signature key into `SQUARE_WEBHOOK_SIGNATURE_KEY`.
+(There is no `payment.completed` event — a card payment usually arrives already
+`COMPLETED` on `payment.created`, so the handler gates on `payment.status`, not
+on the event name.)
 (Until the webhook is configured, the confirmation page's polling fallback still
 confirms payments — the webhook just makes it immediate and reliable.)
 

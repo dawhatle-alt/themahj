@@ -15,17 +15,17 @@ Reference for values and behaviour: [../README.md](../README.md).
 ## Phase 0 — Before the meeting (operator)
 
 - [ ] Accept the **GoDaddy delegate invite** and confirm you can reach the DNS
-      records for `mahjeditco.com` from your own login
+      records for `themahjeditco.com` from your own login
 - [ ] In **Resend → API keys**: delete the `TheMahjEdit` key and recreate it with
       **Sending access** instead of Full access. It lives in Vercel env vars, and
       full access would also reach BougieBams and FortressAI in the same account
-- [ ] In **Resend → Domains**: add `mahjeditco.com` and copy the DKIM/SPF records
+- [ ] In **Resend → Domains**: add `themahjeditco.com` and copy the DKIM/SPF records
       it generates (you'll paste them into GoDaddy in Phase 2)
-- [ ] In **Vercel → Project → Settings → Domains**: add `mahjeditco.com` and
-      `www.mahjeditco.com`, and copy the records Vercel displays
+- [ ] In **Vercel → Project → Settings → Domains**: add `themahjeditco.com` and
+      `www.themahjeditco.com`, and copy the records Vercel displays
 - [ ] Confirm the Vercel **Root Directory** setting is empty (repo root), not
       `artifacts/themahj`
-- [ ] Decide whether `hello@mahjeditco.com` will be a real mailbox; if not, get
+- [ ] Decide whether `hello@themahjeditco.com` will be a real mailbox; if not, get
       the address the client actually reads
 
 ---
@@ -45,7 +45,7 @@ or Square password.
 - [ ] Copy the **location ID** (application → Locations, or Square Dashboard →
       Account & Settings → Locations)
 - [ ] Create a **webhook subscription**:
-      - URL: `https://mahjeditco.com/api/webhooks/square`
+      - URL: `https://themahjeditco.com/api/webhooks/square`
       - Events: `payment.created` and `payment.updated`
       - Copy the **signature key**
 - [ ] Note whether the account activated immediately or went to review — if under
@@ -60,24 +60,52 @@ or Square password.
 
 ## Phase 2 — Domain and DNS (GoDaddy)
 
+The client owns several similar domains. **`themahjeditco.com` is canonical** —
+it is the address she has been promoting. Every other domain she owns forwards
+to it and carries no records of its own.
+
 Do the Vercel and Resend records in one sitting so there's a single propagation
 wait.
 
-- [ ] In GoDaddy DNS for `mahjeditco.com`, add the **Vercel** records:
-      - `A` record for the apex (`@`) → the IP Vercel shows (typically
-        `76.76.21.21`)
-      - `CNAME` for `www` → `cname.vercel-dns.com`
-- [ ] Add the **Resend** records: the DKIM `TXT` record and the SPF `TXT` record
-      from Resend → Domains
+**Clear the way first** — GoDaddy locks records that something else already owns:
+
+- [ ] `themahjeditco.com` → **Websites + Marketing**: disconnect the
+      "launching soon" Website Builder site from the domain. Until this is done
+      GoDaddy holds the apex and refuses an `A` record. Export any email signups
+      the coming-soon page collected before disconnecting
+- [ ] Confirm nothing else claims the apex — no forwarding rule on
+      `themahjeditco.com` itself (Domain → **Products** tab → Connect Domain)
+
+**Then add the records on `themahjeditco.com`:**
+
+- [ ] `A` record for the apex (`@`) → the IP Vercel shows (typically
+      `76.76.21.21`)
+- [ ] `CNAME` for `www` → `cname.vercel-dns.com`
+- [ ] The **Resend** records for this domain: DKIM `TXT`, SPF `TXT`, and the
+      `send` `MX` record. Resend verification is **per-domain** — a verified
+      `mahjeditco.com` does nothing for mail sent from `themahjeditco.com`
 - [ ] **Decline** Vercel's offer to change the nameservers to Vercel. Keeping
       GoDaddy as the DNS host means every future record (Resend, mailbox, anything
       else) lives in one place the client owns
 - [ ] Remove GoDaddy's default parking records if they conflict with the apex `A`
       record
-- [ ] Wait for propagation, then confirm:
-      - [ ] Vercel shows both domains as **Valid**
-      - [ ] Resend shows `mahjeditco.com` as **Verified**
-      - [ ] `https://mahjeditco.com` loads the site (not the registrar lander)
+
+**Then the secondary domains:**
+
+- [ ] `mahjeditco.com` → Domain → **Products** → Connect Domain: forward to
+      `https://themahjeditco.com` (permanent / 301, forward with masking **off**)
+- [ ] Same for any other domains the client owns
+- [ ] The Resend DKIM/SPF/MX records left on `mahjeditco.com` are now dead
+      weight — harmless, but remove them so the zone doesn't imply mail is sent
+      from there
+
+**Then confirm (after propagation):**
+
+- [ ] Vercel shows `themahjeditco.com` and `www.themahjeditco.com` as **Valid**
+- [ ] Resend shows `themahjeditco.com` as **Verified**
+- [ ] `https://themahjeditco.com` loads the site (not the registrar lander)
+- [ ] `https://mahjeditco.com` lands on `themahjeditco.com` with the URL bar
+      showing the canonical domain
 
 ---
 
@@ -97,15 +125,15 @@ Already set:
 To add or confirm:
 
 - [ ] `ADMIN_TOKEN` — the client's chosen admin passcode
-- [ ] `PUBLIC_WEB_ORIGIN` — `https://mahjeditco.com` (used for the Square return
+- [ ] `PUBLIC_WEB_ORIGIN` — `https://themahjeditco.com` (used for the Square return
       redirect and email links; wrong value sends buyers to the wrong host)
-- [ ] `EMAIL_FROM` — `noreply@mahjeditco.com`
+- [ ] `EMAIL_FROM` — `noreply@themahjeditco.com`
 - [ ] `OWNER_EMAIL` — the reply-to address the client actually reads
 - [ ] `SQUARE_ACCESS_TOKEN`
 - [ ] `SQUARE_LOCATION_ID`
 - [ ] `SQUARE_ENVIRONMENT` — `production` (anything else is treated as sandbox)
 - [ ] `SQUARE_WEBHOOK_SIGNATURE_KEY`
-- [ ] `SQUARE_WEBHOOK_URL` — `https://mahjeditco.com/api/webhooks/square`
+- [ ] `SQUARE_WEBHOOK_URL` — `https://themahjeditco.com/api/webhooks/square`
 - [ ] `CRON_SECRET` — any long random string; protects `/api/cron/reminders`
 - [ ] `EVENT_TIMEZONE` — only if events are ever not in `America/Chicago`
 - [ ] **Redeploy** and confirm the deployment goes green

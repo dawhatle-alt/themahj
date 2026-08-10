@@ -10,7 +10,7 @@ import { RegistrationBody } from "./registrations";
 
 const router: IRouter = Router();
 
-const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@mahjeditco.com";
+const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@themahjeditco.com";
 
 function getOrigin(req: Request): string {
   if (process.env.PUBLIC_WEB_ORIGIN) return process.env.PUBLIC_WEB_ORIGIN;

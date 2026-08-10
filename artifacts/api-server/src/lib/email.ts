@@ -2,10 +2,10 @@ import { Resend } from "resend";
 import { logger } from "./logger";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.EMAIL_FROM ?? process.env.FROM_EMAIL ?? "noreply@mahjeditco.com";
-const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@mahjeditco.com";
+const FROM_EMAIL = process.env.EMAIL_FROM ?? process.env.FROM_EMAIL ?? "noreply@themahjeditco.com";
+const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@themahjeditco.com";
 
-const WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN ?? "https://mahjeditco.com").replace(/\/$/, "");
+const WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN ?? "https://themahjeditco.com").replace(/\/$/, "");
 const LOGO_URL = `${WEB_ORIGIN}/logo-gold.png`;
 
 // Branded header for customer-facing emails. Uses the width attribute (respected

@@ -182,7 +182,7 @@ export function Events({ events, loadError, onRegistered }: {
                   <p className="font-display italic text-2xl">We couldn't load the calendar</p>
                   <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
                     Something went wrong on our end — please refresh, or email{" "}
-                    <a className="underline" href="mailto:hello@mahjeditco.com">hello@mahjeditco.com</a>{" "}
+                    <a className="underline" href="mailto:hello@themahjeditco.com">hello@themahjeditco.com</a>{" "}
                     and we'll get you a seat.
                   </p>
                 </>
