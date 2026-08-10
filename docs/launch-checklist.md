@@ -231,8 +231,26 @@ chain rather than individual settings.
 
 ---
 
+## Hosting decisions the operator has to make
+
+- [ ] **Supabase plan.** The project is on the free tier, which **auto-pauses
+      after ~7 days of idle** and takes several minutes to restore. This already
+      caused a live `500` on `/api/events` during setup. The dangerous window is
+      exactly post-launch: promoted, but low traffic. Pro is $25/month and
+      removes auto-pause. A keep-warm cron is not a real fix — Vercel Hobby caps
+      cron at one run per day, which cannot cover a 7-day idle window
+- [ ] Decide whether these hosting costs are absorbed into the monthly support
+      fee or billed through to the client
+
+---
+
 ## Still open / not blocking launch
 
+- [ ] **Drop `public.events_old`** once the client has confirmed the site works.
+      It is the pre-migration copy of the `events` table, kept as a safety net
+      when the table was rebuilt to match the Drizzle schema
+- [ ] Check whether the legacy `photos` and `signups` tables are still used by
+      any code — they are scaffold leftovers with one row each
 - [ ] Contact form or a clearer "ask a question" path — currently the footer just
       displays an email address
 - [ ] Transfer plan if the arrangement ever ends: Vercel and Supabase projects
