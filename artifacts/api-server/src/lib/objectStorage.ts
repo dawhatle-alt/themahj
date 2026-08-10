@@ -16,7 +16,12 @@ function getServiceClient() {
 }
 
 export function getPublicStorageUrl(filePath: string): string {
-  const url = process.env.SUPABASE_URL ?? "";
+  const url = process.env.SUPABASE_URL;
+  // Without this, an unset SUPABASE_URL produced a relative redirect that the
+  // SPA rewrite swallowed into index.html — a broken image with no error.
+  if (!url) {
+    throw new Error("SUPABASE_URL is not set — cannot build a public storage URL.");
+  }
   return `${url}/storage/v1/object/public/${BUCKET}/${filePath}`;
 }
 

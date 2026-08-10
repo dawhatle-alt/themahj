@@ -486,7 +486,15 @@ router.post("/admin/storage/upload-url", requireAdmin, async (_req, res): Promis
     res.json({ uploadURL, objectPath });
   } catch (err) {
     logger.error({ err }, "Failed to generate upload URL");
-    res.status(500).json({ error: "Could not generate upload URL" });
+    // Missing SUPABASE_* vars are an operator misconfiguration, not a transient
+    // failure — say so, or the admin just sees "try again" forever.
+    const misconfigured =
+      err instanceof Error && err.message.startsWith("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
+    res.status(misconfigured ? 503 : 500).json({
+      error: misconfigured
+        ? "Image storage isn't configured on the server. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel, then redeploy."
+        : "Could not generate upload URL",
+    });
   }
 });
 

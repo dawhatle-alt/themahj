@@ -150,9 +150,18 @@ Already set:
 
 - [ ] `DATABASE_URL` — Supabase **Transaction pooler** URI, password
       percent-encoded (`#` → `%23`)
-- [ ] `SUPABASE_URL` — `https://bjrmimkbeyvhgyofjmiw.supabase.co`
-- [ ] `SUPABASE_SERVICE_ROLE_KEY`
 - [ ] `RESEND_API_KEY` — the recreated Sending-access key
+
+**Missing in Production as of 2026-08-10** — without these, every admin image
+upload fails with "Image storage isn't configured on the server", and existing
+cover images render as broken:
+
+- [ ] `SUPABASE_URL` — `https://bjrmimkbeyvhgyofjmiw.supabase.co`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` — Supabase → Settings → API → `service_role`
+
+Quick way to verify without logging in: `curl -sI https://themahjeditco.com/api/storage/objects/x`
+should return a `Location:` starting with `https://bjrmimkbeyvhgyofjmiw.supabase.co`.
+A bare `/storage/v1/...` means `SUPABASE_URL` is unset.
 
 To add or confirm:
 

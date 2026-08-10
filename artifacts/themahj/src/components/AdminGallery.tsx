@@ -168,7 +168,11 @@ export function Admin() {
   const [editing, setEditing] = useState<ApiEvent | null>(null);
   const [draft, setDraft] = useState<EventDraft>(emptyEvent());
   const [coverUploading, setCoverUploading] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [coverPreviewBroken, setCoverPreviewBroken] = useState(false);
   const [photoMeta, setPhotoMeta] = useState({ caption: "", eventLabel: "" });
+  const [photoUploading, setPhotoUploading] = useState(0);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [codeDraft, setCodeDraft] = useState({ code: "", percent: "10", description: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -282,14 +286,24 @@ export function Admin() {
   async function handleCoverFile(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
+    setCoverError(null);
+    setCoverPreviewBroken(false);
     setCoverUploading(true);
     try {
       const blob = await resizeImage(file, 1600);
-      if (!blob) throw new Error("Could not read that image file");
+      if (!blob) {
+        // The browser canvas can't decode HEIC, which is what an iPhone hands
+        // over unless "Most Compatible" is set — by far the likeliest reason
+        // a real photo fails to read.
+        throw new Error("That image couldn't be read. iPhone HEIC photos need to be saved as JPEG or PNG first.");
+      }
       const objectPath = await adminUploadImage(blob);
       setDraft(d => ({ ...d, imagePath: objectPath }));
     } catch (err) {
-      fail(err, "Cover image upload failed");
+      // Shown beside the field, not only in the page-top banner — that banner
+      // is off-screen once the form is scrolled down to the cover input, which
+      // made a failed upload look like nothing happening at all.
+      setCoverError(err instanceof Error ? err.message : "Cover image upload failed");
     } finally {
       setCoverUploading(false);
       if (coverRef.current) coverRef.current.value = "";
@@ -305,23 +319,36 @@ export function Admin() {
     }
   }
 
-  function handleFiles(files: FileList | null) {
-    if (!files) return;
-    Array.from(files).forEach(file => {
-      void resizeImage(file, 1200).then(async (blob) => {
-        if (!blob) return;
-        try {
-          await adminUploadPhoto(blob, {
-            caption: photoMeta.caption || file.name,
-            eventLabel: photoMeta.eventLabel || "Event",
-          });
-          listGallery().then(setPhotos).catch(() => undefined);
-        } catch (err) {
-          fail(err, "Photo upload failed");
-        }
-      });
-    });
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const batch = Array.from(files);
+    setPhotoError(null);
+    setPhotoUploading(batch.length);
     if (fileRef.current) fileRef.current.value = "";
+
+    // allSettled so one bad file doesn't hide the fate of the rest — the old
+    // version resolved unreadable files to nothing at all, with no feedback.
+    const results = await Promise.allSettled(
+      batch.map(async (file) => {
+        const blob = await resizeImage(file, 1200);
+        if (!blob) throw new Error(`"${file.name}" couldn't be read — save it as JPEG or PNG first.`);
+        await adminUploadPhoto(blob, {
+          caption: photoMeta.caption || file.name,
+          eventLabel: photoMeta.eventLabel || "Event",
+        });
+      }),
+    );
+    setPhotoUploading(0);
+
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (failures.length > 0) {
+      const reason = failures[0].reason;
+      const detail = reason instanceof Error ? reason.message : "Upload failed.";
+      setPhotoError(
+        failures.length === batch.length ? detail : `${failures.length} of ${batch.length} photos failed. ${detail}`,
+      );
+    }
+    listGallery().then(setPhotos).catch(() => undefined);
   }
 
   async function deletePhoto(id: number) {
@@ -472,22 +499,61 @@ export function Admin() {
               <textarea className={inputCls} rows={3} placeholder="Description" value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} />
 
               {/* Cover image */}
-              <div className="rounded-md border bg-white p-3" style={{ borderColor: "#E9DFD0" }}>
+              <div className="rounded-md border bg-white p-3"
+                style={{ borderColor: coverError ? "var(--crak)" : "#E9DFD0" }}>
                 <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: "var(--gold)" }}>Cover image</p>
                 {draft.imagePath ? (
                   <div className="flex items-center gap-3">
-                    <img src={`/api/storage${draft.imagePath}`} alt="Event cover"
-                      className="w-24 h-16 object-cover rounded border" style={{ borderColor: "#E9DFD0" }} />
-                    <button onClick={() => setDraft({ ...draft, imagePath: null })}
-                      className="text-xs underline underline-offset-2" style={{ color: "var(--crak)" }}>
-                      Remove
-                    </button>
+                    {coverPreviewBroken ? (
+                      <div className="w-24 h-16 rounded border grid place-items-center text-center text-[10px] leading-tight px-1"
+                        style={{ borderColor: "#E9DFD0", color: "var(--ink-soft)" }}>
+                        Preview<br />unavailable
+                      </div>
+                    ) : (
+                      <img src={`/api/storage${draft.imagePath}`} alt="Event cover"
+                        onError={() => setCoverPreviewBroken(true)}
+                        className="w-24 h-16 object-cover rounded border" style={{ borderColor: "#E9DFD0" }} />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs" style={{ color: coverPreviewBroken ? "var(--gold)" : "var(--jade)" }}>
+                        {coverPreviewBroken ? "Attached, but it won't display" : "Image attached"}
+                      </p>
+                      <button
+                        onClick={() => { setDraft({ ...draft, imagePath: null }); setCoverPreviewBroken(false); }}
+                        className="text-xs underline underline-offset-2 mt-1 min-h-[44px] sm:min-h-0"
+                        style={{ color: "var(--crak)" }}>
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <input ref={coverRef} type="file" accept="image/*" className="text-sm"
-                    onChange={e => void handleCoverFile(e.target.files)} disabled={coverUploading} />
+                  <>
+                    <input ref={coverRef} id="cover-file" type="file"
+                      accept="image/jpeg,image/png,image/webp" className="sr-only"
+                      onChange={e => void handleCoverFile(e.target.files)} disabled={coverUploading} />
+                    <label htmlFor="cover-file"
+                      className={`inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-full border text-xs uppercase tracking-[0.16em] cursor-pointer transition-opacity ${coverUploading ? "opacity-50 pointer-events-none" : ""}`}
+                      style={{ borderColor: "var(--jade)", color: "var(--jade)" }}>
+                      {coverUploading && (
+                        <span aria-hidden="true"
+                          className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin" />
+                      )}
+                      {coverUploading ? "Uploading…" : "Choose image"}
+                    </label>
+                    <p className="text-[11px] mt-2" style={{ color: "var(--ink-soft)" }}>
+                      JPEG, PNG, or WebP — resized to 1600px automatically.
+                    </p>
+                  </>
                 )}
-                {coverUploading && <p className="text-xs mt-2" style={{ color: "var(--ink-soft)" }}>Uploading…</p>}
+                {coverError && (
+                  <div role="alert" className="mt-2 text-xs" style={{ color: "var(--crak)" }}>
+                    <p>{coverError}</p>
+                    <button onClick={() => { setCoverError(null); coverRef.current?.click(); }}
+                      className="underline underline-offset-2 mt-1">
+                      Try again
+                    </button>
+                  </div>
+                )}
               </div>
 
               <label className="block text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
@@ -781,11 +847,24 @@ export function Admin() {
                 onChange={e => setPhotoMeta({ ...photoMeta, eventLabel: e.target.value })} />
               <input className={inputCls} placeholder="Caption" value={photoMeta.caption}
                 onChange={e => setPhotoMeta({ ...photoMeta, caption: e.target.value })} />
-              <input ref={fileRef} type="file" accept="image/*" multiple className={inputCls}
-                onChange={e => handleFiles(e.target.files)} />
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple
+                className={inputCls} disabled={photoUploading > 0}
+                onChange={e => void handleFiles(e.target.files)} />
               <p className="text-[11px]" style={{ color: "var(--ink-soft)" }}>
-                Images are resized to 1200px and uploaded to secure storage.
+                JPEG, PNG, or WebP — resized to 1200px and uploaded to secure storage.
               </p>
+              <div aria-live="polite">
+                {photoUploading > 0 && (
+                  <p className="text-xs flex items-center gap-2" style={{ color: "var(--ink-soft)" }}>
+                    <span aria-hidden="true"
+                      className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin" />
+                    Uploading {photoUploading} photo{photoUploading === 1 ? "" : "s"}…
+                  </p>
+                )}
+                {photoError && (
+                  <p role="alert" className="text-xs" style={{ color: "var(--crak)" }}>{photoError}</p>
+                )}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
