@@ -31,6 +31,15 @@ export function isSandboxMode(): boolean {
   return (process.env.SQUARE_ENVIRONMENT ?? "").trim().toLowerCase() !== "production";
 }
 
+// Square returns money as bigint in this SDK version. This is the total after
+// any order-level discount — i.e. what the guest was actually charged.
+export function orderTotalCents(order: unknown): number | null {
+  const amount = (order as { totalMoney?: { amount?: bigint | number | string } })?.totalMoney?.amount;
+  if (amount === undefined || amount === null) return null;
+  const cents = Number(amount);
+  return Number.isFinite(cents) ? cents : null;
+}
+
 export interface SquareApiError {
   category?: string;
   code?: string;

@@ -134,7 +134,12 @@ router.get("/admin/registrations", requireAdmin, async (_req, res): Promise<void
       notes: registrationsTable.notes,
       status: registrationsTable.status,
       paymentSessionId: registrationsTable.paymentSessionId,
+      discountCode: registrationsTable.discountCode,
+      amountPaidCents: registrationsTable.amountPaidCents,
       createdAt: registrationsTable.createdAt,
+      eventDate: eventsTable.date,
+      eventTotalSpots: eventsTable.totalSpots,
+      eventSpotsLeft: eventsTable.spotsLeft,
     })
     .from(registrationsTable)
     .leftJoin(eventsTable, eq(registrationsTable.eventId, eventsTable.id))
@@ -145,6 +150,9 @@ router.get("/admin/registrations", requireAdmin, async (_req, res): Promise<void
       id: r.id,
       eventId: r.eventId,
       eventTitle: r.eventTitle ?? "Unknown Event",
+      eventDate: r.eventDate ?? null,
+      eventTotalSpots: r.eventTotalSpots ?? null,
+      eventSpotsLeft: r.eventSpotsLeft ?? null,
       name: r.name,
       email: r.email,
       phone: r.phone ?? null,
@@ -152,6 +160,8 @@ router.get("/admin/registrations", requireAdmin, async (_req, res): Promise<void
       notes: r.notes ?? null,
       status: r.status,
       paid: !!r.paymentSessionId,
+      discountCode: r.discountCode ?? null,
+      amountPaidCents: r.amountPaidCents ?? null,
       createdAt: r.createdAt.toISOString(),
     })),
   });

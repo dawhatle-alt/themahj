@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db, eventsTable, registrationsTable } from "@workspace/db";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
 import { markRedemptionPaid } from "../lib/discounts";
-import { getSquareClient } from "../lib/square";
+import { getSquareClient, orderTotalCents } from "../lib/square";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -214,7 +214,7 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
     if (isPaid) {
       await db
         .update(registrationsTable)
-        .set({ status: "confirmed" })
+        .set({ status: "confirmed", amountPaidCents: orderTotalCents(order) ?? reg.amountPaidCents })
         .where(eq(registrationsTable.id, id));
 
       if (evt.spotsLeft < reg.seats) {

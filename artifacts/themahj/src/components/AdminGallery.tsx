@@ -159,6 +159,7 @@ export function Admin() {
 
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [registrations, setRegistrations] = useState<AdminRegistration[]>([]);
+  const [regEventFilter, setRegEventFilter] = useState<number | "all">("all");
   const [photos, setPhotos] = useState<ApiPhoto[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [ordersNote, setOrdersNote] = useState<string | null>(null);
@@ -420,6 +421,37 @@ export function Admin() {
     }
   }
 
+  const shownRegistrations = regEventFilter === "all"
+    ? registrations
+    : registrations.filter(r => r.eventId === regEventFilter);
+
+  // Only events that actually have registrations — a dropdown listing every
+  // event ever created would be mostly dead options at a check-in desk.
+  const regEventOptions = Array.from(
+    new Map(
+      registrations.map(r => [r.eventId, { id: r.eventId, title: r.eventTitle, date: r.eventDate }]),
+    ).values(),
+  ).sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+
+  // Seats and revenue count confirmed registrations only: a pending row is an
+  // abandoned checkout that never claimed a seat or took any money.
+  const confirmedShown = shownRegistrations.filter(r => r.status === "confirmed");
+  const regStats = {
+    total: shownRegistrations.length,
+    pending: shownRegistrations.length - confirmedShown.length,
+    seats: confirmedShown.reduce((n, r) => n + r.seats, 0),
+    revenueCents: confirmedShown.reduce((n, r) => n + (r.amountPaidCents ?? 0), 0),
+    discounted: confirmedShown.filter(r => r.discountCode).length,
+  };
+  const filteredEvent = regEventFilter === "all"
+    ? null
+    : events.find(e => e.id === regEventFilter) ?? null;
+
+  const paidLabel = (s: AdminRegistration) => {
+    if (s.amountPaidCents === null) return s.status === "pending" ? "unpaid" : "—";
+    return s.amountPaidCents === 0 ? "Free" : money(s.amountPaidCents);
+  };
+
   const tabBtn = (t: Tab, label: string) => (
     <button key={t} onClick={() => setTab(t)}
       className={`px-5 py-2 rounded-full text-xs uppercase tracking-[0.16em] border transition-colors ${tab === t ? "btn-rose border-transparent" : "bg-white/60"}`}
@@ -652,11 +684,82 @@ export function Admin() {
         </div>
       )}
 
+      {/* Filter + running totals. The numbers describe whatever is on screen,
+          so they re-scope the moment an event is picked. */}
+      {tab === "registrations" && registrations.length > 0 && (
+        <div className="mt-8 bg-white/70 border rounded-lg p-5" style={{ borderColor: "#E9DFD0" }}>
+          <label className="block text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+            Filter by event
+            <select
+              className={inputCls + " mt-1 max-w-md"}
+              value={regEventFilter === "all" ? "all" : String(regEventFilter)}
+              onChange={e => setRegEventFilter(e.target.value === "all" ? "all" : Number(e.target.value))}>
+              <option value="all">All events ({registrations.length})</option>
+              {regEventOptions.map(o => (
+                <option key={o.id} value={o.id}>
+                  {o.title}{o.date ? ` — ${fmtDate(o.date)}` : ""}
+                  {" "}({registrations.filter(r => r.eventId === o.id).length})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <dl aria-live="polite" className="flex flex-wrap gap-x-10 gap-y-4 mt-5">
+            <div>
+              <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>
+                {filteredEvent ? "Registrations for this event" : "Total registrations"}
+              </dt>
+              <dd className="font-display text-3xl tabular-nums leading-tight">{regStats.total}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>Seats booked</dt>
+              <dd className="font-display text-3xl tabular-nums leading-tight">
+                {regStats.seats}
+                {filteredEvent && (
+                  <span className="text-base ml-2" style={{ color: "var(--ink-soft)" }}>
+                    of {filteredEvent.totalSpots}
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>Collected</dt>
+              <dd className="font-display text-3xl tabular-nums leading-tight">{money(regStats.revenueCents)}</dd>
+            </div>
+            {filteredEvent && (
+              <div>
+                <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>Seats left</dt>
+                <dd className="font-display text-3xl tabular-nums leading-tight"
+                  style={{ color: filteredEvent.spotsLeft === 0 ? "var(--crak)" : "var(--jade)" }}>
+                  {filteredEvent.spotsLeft}
+                </dd>
+              </div>
+            )}
+          </dl>
+
+          <p className="text-xs mt-4" style={{ color: "var(--ink-soft)" }}>
+            Seats and money count confirmed registrations only.
+            {regStats.pending > 0 && ` ${regStats.pending} pending (unpaid) not counted.`}
+            {regStats.discounted > 0 && ` ${regStats.discounted} used a discount code.`}
+          </p>
+        </div>
+      )}
+
+      {tab === "registrations" && registrations.length > 0 && shownRegistrations.length === 0 && (
+        <div className="mt-4 bg-white/70 border rounded-lg p-8 text-center" style={{ borderColor: "#E9DFD0" }}>
+          <p className="text-sm" style={{ color: "var(--ink-soft)" }}>No registrations for this event yet.</p>
+          <button onClick={() => setRegEventFilter("all")}
+            className="text-xs underline underline-offset-2 mt-2" style={{ color: "var(--jade)" }}>
+            Show all events
+          </button>
+        </div>
+      )}
+
       {/* Stacked cards on phones — the full table needs ~950px, which is most of
           a phone screen spent sideways-scrolling at a check-in desk. */}
-      {tab === "registrations" && registrations.length > 0 && (
-        <div className="mt-8 space-y-3 md:hidden">
-          {registrations.map(s => (
+      {tab === "registrations" && shownRegistrations.length > 0 && (
+        <div className="mt-4 space-y-3 md:hidden">
+          {shownRegistrations.map(s => (
             <div key={s.id} className="bg-white/70 border rounded-lg p-4" style={{ borderColor: "#E9DFD0" }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -673,7 +776,20 @@ export function Admin() {
               </p>
               <p className="text-xs mt-1" style={{ color: "var(--ink-soft)" }}>
                 {s.seats} seat{s.seats === 1 ? "" : "s"}
+                {s.eventTotalSpots !== null && (
+                  <> · {s.eventSpotsLeft} of {s.eventTotalSpots} left</>
+                )}
                 {s.notes ? ` · ${s.notes}` : ""}
+              </p>
+              <p className="text-xs mt-1 tabular-nums">
+                <span style={{ color: "var(--ink-soft)" }}>Paid </span>
+                <strong>{paidLabel(s)}</strong>
+                {s.discountCode && (
+                  <span className="ml-2 inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full bg-[#EFE7DA]"
+                    style={{ color: "var(--gold)" }}>
+                    {s.discountCode}
+                  </span>
+                )}
               </p>
               <button onClick={() => void removeRegistration(s.id)}
                 className="text-xs mt-2 underline underline-offset-2" style={{ color: "var(--crak)" }}>
@@ -684,22 +800,44 @@ export function Admin() {
         </div>
       )}
 
-      {tab === "registrations" && registrations.length > 0 && (
-        <div className="mt-8 overflow-x-auto bg-white/70 border rounded-lg hidden md:block" style={{ borderColor: "#E9DFD0" }}>
+      {tab === "registrations" && shownRegistrations.length > 0 && (
+        <div className="mt-4 overflow-x-auto bg-white/70 border rounded-lg hidden md:block" style={{ borderColor: "#E9DFD0" }}>
           <table className="w-full text-sm">
               <thead>
                 <tr style={{ color: "var(--gold)" }}>
-                  {["Event", "Name", "Email", "Phone", "Seats", "Status", "Note", ""].map(h => <th key={h} className={th}>{h}</th>)}
+                  {["Event", "Name", "Email", "Phone", "Seats", "Event seats", "Paid", "Discount", "Status", "Note", ""]
+                    .map(h => <th key={h} className={th}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {registrations.map(s => (
+                {shownRegistrations.map(s => (
                   <tr key={s.id} className="border-t" style={{ borderColor: "#EFE7DA" }}>
                     <td className="px-4 py-3 font-medium">{s.eventTitle}</td>
                     <td className="px-4 py-3">{s.name}</td>
                     <td className="px-4 py-3">{s.email}</td>
                     <td className="px-4 py-3">{s.phone || "—"}</td>
-                    <td className="px-4 py-3">{s.seats}</td>
+                    <td className="px-4 py-3 tabular-nums">{s.seats}</td>
+                    <td className="px-4 py-3 tabular-nums whitespace-nowrap">
+                      {s.eventTotalSpots === null ? "—" : (
+                        <>
+                          <span style={{ color: s.eventSpotsLeft === 0 ? "var(--crak)" : "var(--jade)" }}>
+                            {s.eventSpotsLeft}
+                          </span>
+                          <span style={{ color: "var(--ink-soft)" }}> of {s.eventTotalSpots} left</span>
+                        </>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums whitespace-nowrap">{paidLabel(s)}</td>
+                    <td className="px-4 py-3">
+                      {s.discountCode ? (
+                        <span className="inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full bg-[#EFE7DA]"
+                          style={{ color: "var(--gold)" }}>
+                          {s.discountCode}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--ink-soft)" }}>—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span style={{ color: s.status === "confirmed" ? "var(--jade)" : "var(--gold)" }}>
                         {s.status}{s.paid ? " · paid" : ""}

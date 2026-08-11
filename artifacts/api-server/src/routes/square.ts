@@ -5,7 +5,7 @@ import { logger } from "../lib/logger";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
 import {
   getSquareClient, getSquareLocationId, isSquareLocationConfigured, isSandboxMode,
-  squareErrorDetails, isSquareConfigError,
+  squareErrorDetails, isSquareConfigError, orderTotalCents,
 } from "../lib/square";
 import { resolveDiscount, hasRedeemed, recordPendingRedemption, markRedemptionPaid } from "../lib/discounts";
 import { z } from "zod";
@@ -119,6 +119,10 @@ router.post(
           seats,
           notes: notes ?? null,
           status: priceInCents > 0 ? "pending" : "confirmed",
+          discountCode: discount?.code ?? null,
+          // Paid registrations get the real captured amount at confirmation;
+          // free ones are settled at zero right here.
+          amountPaidCents: priceInCents > 0 ? null : 0,
         })
         .returning();
 
@@ -244,7 +248,11 @@ router.post(
   },
 );
 
-async function confirmRegistration(registrationId: number, paymentId: string | null) {
+async function confirmRegistration(
+  registrationId: number,
+  paymentId: string | null,
+  amountPaidCents: number | null,
+) {
   const [reg] = await db
     .select()
     .from(registrationsTable)
@@ -255,7 +263,11 @@ async function confirmRegistration(registrationId: number, paymentId: string | n
 
   await db
     .update(registrationsTable)
-    .set({ status: "confirmed", paymentSessionId: paymentId ?? reg.paymentSessionId })
+    .set({
+      status: "confirmed",
+      paymentSessionId: paymentId ?? reg.paymentSessionId,
+      amountPaidCents: amountPaidCents ?? reg.amountPaidCents,
+    })
     .where(eq(registrationsTable.id, registrationId));
 
   const [evt] = await db
@@ -400,7 +412,11 @@ router.post(
         if (referenceId) {
           const registrationId = parseInt(referenceId, 10);
           if (!Number.isNaN(registrationId)) {
-            await confirmRegistration(registrationId, payment.id ?? null);
+            await confirmRegistration(
+              registrationId,
+              payment.id ?? null,
+              orderTotalCents(orderRes.order),
+            );
           }
         }
 

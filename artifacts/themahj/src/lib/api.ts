@@ -97,6 +97,9 @@ export interface AdminRegistration {
   id: number;
   eventId: number;
   eventTitle: string;
+  eventDate: string | null;
+  eventTotalSpots: number | null;
+  eventSpotsLeft: number | null;
   name: string;
   email: string;
   phone: string | null;
@@ -104,6 +107,9 @@ export interface AdminRegistration {
   notes: string | null;
   status: string;
   paid: boolean;
+  discountCode: string | null;
+  /** What Square actually captured. Null while a paid registration is pending. */
+  amountPaidCents: number | null;
   createdAt: string;
 }
 

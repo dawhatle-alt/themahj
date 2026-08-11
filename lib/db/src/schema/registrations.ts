@@ -12,6 +12,13 @@ export const registrationsTable = pgTable("registrations", {
   notes: text("notes"),
   status: text("status").notNull().default("confirmed"),
   paymentSessionId: text("payment_session_id"),
+  // Recorded at checkout. discount_redemptions keys on (code, email) and links
+  // to a Square order id, which can't be joined back to a registration — the
+  // registration only knows its payment *link* id.
+  discountCode: text("discount_code"),
+  // The amount Square actually captured, read off the order at confirmation.
+  // Null while pending; 0 for free events.
+  amountPaidCents: integer("amount_paid_cents"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
