@@ -5,9 +5,7 @@ export function getSquareClient() {
   const token = process.env.SQUARE_ACCESS_TOKEN;
   if (!token) return null;
   const envVar = process.env.SQUARE_ENVIRONMENT;
-  const env = envVar === "production"
-    ? SquareEnvironment.Production
-    : SquareEnvironment.Sandbox;
+  const env = isSandboxMode() ? SquareEnvironment.Sandbox : SquareEnvironment.Production;
   if (!envVar) {
     logger.warn("SQUARE_ENVIRONMENT not set — defaulting to Sandbox");
   }
@@ -26,8 +24,11 @@ export function isSquareLocationConfigured(): boolean {
   return id.length > 0 && id !== "SQUARE_LOCATION_ID";
 }
 
+// Case- and whitespace-insensitive: an exact-match check silently sent
+// "Production" (and " production") to the sandbox, which fails in the most
+// confusing way possible — real credentials, real location, no such location.
 export function isSandboxMode(): boolean {
-  return process.env.SQUARE_ENVIRONMENT !== "production";
+  return (process.env.SQUARE_ENVIRONMENT ?? "").trim().toLowerCase() !== "production";
 }
 
 export interface SquareApiError {
