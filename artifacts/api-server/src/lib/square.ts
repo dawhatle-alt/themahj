@@ -29,3 +29,39 @@ export function isSquareLocationConfigured(): boolean {
 export function isSandboxMode(): boolean {
   return process.env.SQUARE_ENVIRONMENT !== "production";
 }
+
+export interface SquareApiError {
+  category?: string;
+  code?: string;
+  detail?: string;
+  field?: string;
+}
+
+// The SDK puts its structured errors in a different place depending on how the
+// call failed, so check each shape rather than guessing one.
+export function squareErrorDetails(err: unknown): SquareApiError[] {
+  const candidates = [
+    (err as { errors?: unknown })?.errors,
+    (err as { body?: { errors?: unknown } })?.body?.errors,
+    (err as { result?: { errors?: unknown } })?.result?.errors,
+  ];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length > 0) return candidate as SquareApiError[];
+  }
+  return [];
+}
+
+// Distinguishes "the credentials or location are wrong" — which retrying will
+// never fix — from a genuinely transient failure.
+export function isSquareConfigError(err: unknown): boolean {
+  const status = (err as { statusCode?: number })?.statusCode;
+  if (status === 401 || status === 403) return true;
+  return squareErrorDetails(err).some(
+    (e) =>
+      e.category === "AUTHENTICATION_ERROR" ||
+      e.code === "UNAUTHORIZED" ||
+      e.code === "FORBIDDEN" ||
+      e.code === "INVALID_LOCATION" ||
+      (e.code === "NOT_FOUND" && (e.field ?? "").includes("location_id")),
+  );
+}

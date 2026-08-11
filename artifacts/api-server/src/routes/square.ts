@@ -3,7 +3,10 @@ import { sql, eq } from "drizzle-orm";
 import { db, eventsTable, registrationsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
-import { getSquareClient, getSquareLocationId, isSquareLocationConfigured, isSandboxMode } from "../lib/square";
+import {
+  getSquareClient, getSquareLocationId, isSquareLocationConfigured, isSandboxMode,
+  squareErrorDetails, isSquareConfigError,
+} from "../lib/square";
 import { resolveDiscount, hasRedeemed, recordPendingRedemption, markRedemptionPaid } from "../lib/discounts";
 import { z } from "zod";
 import { RegistrationBody } from "./registrations";
@@ -102,6 +105,9 @@ router.post(
     const priceInCents = event.priceCents ?? 0;
     const origin = getOrigin(req);
 
+    // Tracked so a Square failure doesn't strand the row we inserted before it.
+    let pendingRegistrationId: number | null = null;
+
     try {
       const [registration] = await db
         .insert(registrationsTable)
@@ -117,6 +123,7 @@ router.post(
         .returning();
 
       if (priceInCents > 0) {
+        pendingRegistrationId = registration.id;
         const idempotencyKey = `reg-${registration.id}-${Date.now()}`;
         const locationId = getSquareLocationId();
 
@@ -203,7 +210,35 @@ router.post(
         res.json({ url: null, registrationId: registration.id });
       }
     } catch (err) {
-      logger.error({ err }, "Registration checkout error");
+      logger.error(
+        {
+          err,
+          squareErrors: squareErrorDetails(err),
+          environment: isSandboxMode() ? "sandbox" : "production",
+          locationId: getSquareLocationId(),
+        },
+        "Registration checkout error",
+      );
+
+      // The row is inserted before Square is called, so a failed checkout would
+      // otherwise leave a pending registration nobody can pay for.
+      if (pendingRegistrationId !== null) {
+        try {
+          await db.delete(registrationsTable).where(eq(registrationsTable.id, pendingRegistrationId));
+        } catch (cleanupErr) {
+          logger.error({ cleanupErr, pendingRegistrationId }, "Failed to clean up stranded registration");
+        }
+      }
+
+      // "Please try again" is wrong advice when Square rejected the credentials —
+      // no amount of retrying fixes that, and the guest deserves a way through.
+      if (isSquareConfigError(err)) {
+        res.status(503).json({
+          error: `Payment processing isn't set up correctly yet — you were not charged. Contact ${CONTACT_EMAIL} to register.`,
+        });
+        return;
+      }
+
       res.status(500).json({ error: "Could not process registration. Please try again." });
     }
   },

@@ -3,14 +3,14 @@ import { motion, type Variants } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type {
   AdminDiscountCode, AdminOrder, AdminRedemption, AdminRegistration,
-  ApiEvent, ApiPhoto, EventInput,
+  ApiEvent, ApiPhoto, EventInput, SquareDiagnostics,
 } from "@/lib/api";
 import {
   adminCreateDiscountCode, adminCreateEvent, adminDeleteDiscountCode, adminDeleteEvent,
   adminDeletePhoto, adminDeleteRedemption, adminDeleteRegistration, adminDownloadCheckinReport,
   adminListDiscountCodes, adminListEvents, adminListOrders, adminListRedemptions,
-  adminListRegistrations, adminLogin, adminUpdateDiscountCode, adminUpdateEvent,
-  adminUploadImage, adminUploadPhoto, getAdminToken, listGallery, setAdminToken,
+  adminListRegistrations, adminLogin, adminSquareDiagnostics, adminUpdateDiscountCode,
+  adminUpdateEvent, adminUploadImage, adminUploadPhoto, getAdminToken, listGallery, setAdminToken,
 } from "@/lib/api";
 import { CATEGORIES, REMINDER_OPTIONS, categoryMeta, fmtDate, fmtPrice, formatTimeRange } from "@/lib/data";
 
@@ -162,6 +162,8 @@ export function Admin() {
   const [photos, setPhotos] = useState<ApiPhoto[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [ordersNote, setOrdersNote] = useState<string | null>(null);
+  const [squareDiag, setSquareDiag] = useState<SquareDiagnostics | null>(null);
+  const [squareChecking, setSquareChecking] = useState(false);
   const [codes, setCodes] = useState<AdminDiscountCode[]>([]);
   const [redemptions, setRedemptions] = useState<AdminRedemption[]>([]);
 
@@ -307,6 +309,17 @@ export function Admin() {
     } finally {
       setCoverUploading(false);
       if (coverRef.current) coverRef.current.value = "";
+    }
+  }
+
+  async function checkSquare() {
+    setSquareChecking(true);
+    try {
+      setSquareDiag(await adminSquareDiagnostics());
+    } catch (err) {
+      fail(err, "Could not run the Square connection check");
+    } finally {
+      setSquareChecking(false);
     }
   }
 
@@ -707,6 +720,60 @@ export function Admin() {
       {/* ORDERS TAB */}
       {tab === "orders" && (
         <div className="mt-8">
+          {/* Payments health — checkout failures are intentionally vague to
+              guests, so this is where the real reason surfaces. */}
+          <div className="mb-6 rounded-lg border bg-white/70 p-4" style={{ borderColor: "#E9DFD0" }}>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em]" style={{ color: "var(--gold)" }}>Square connection</p>
+                <p className="text-xs mt-1" style={{ color: "var(--ink-soft)" }}>
+                  Run this if guests report that payment isn't working.
+                </p>
+              </div>
+              <button onClick={() => void checkSquare()} disabled={squareChecking}
+                className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-full border text-xs uppercase tracking-[0.16em] disabled:opacity-40"
+                style={{ borderColor: "var(--jade)", color: "var(--jade)" }}>
+                {squareChecking && (
+                  <span aria-hidden="true"
+                    className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin" />
+                )}
+                {squareChecking ? "Checking…" : "Check connection"}
+              </button>
+            </div>
+            {squareDiag && (
+              <div aria-live="polite" className="mt-4 text-sm">
+                <p className="font-medium" style={{ color: squareDiag.check.ok ? "var(--jade)" : "var(--crak)" }}>
+                  {squareDiag.check.ok ? "Connected" : "Not working"}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--ink-soft)" }}>{squareDiag.check.reason}</p>
+                {squareDiag.check.squareErrors?.map((e, i) => (
+                  <p key={i} className="text-xs mt-1" style={{ color: "var(--crak)" }}>
+                    {e.category ?? "ERROR"} · {e.code ?? "?"}{e.field ? ` (${e.field})` : ""} — {e.detail ?? squareDiag.check.message}
+                  </p>
+                ))}
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 mt-3 text-xs" style={{ color: "var(--ink-soft)" }}>
+                  <dt>Environment</dt>
+                  <dd>{squareDiag.configured.environment} → <strong>{squareDiag.configured.effectiveEnvironment}</strong></dd>
+                  <dt>Access token</dt>
+                  <dd>{squareDiag.configured.accessTokenSet ? `set (${squareDiag.configured.accessTokenLength} chars)` : "not set"}</dd>
+                  <dt>Location ID</dt>
+                  <dd className="break-all">{squareDiag.configured.locationId ?? "not set"}</dd>
+                  <dt>Webhook</dt>
+                  <dd>
+                    {squareDiag.configured.webhookUrlSet ? "URL set" : "URL missing"}
+                    {" · "}
+                    {squareDiag.configured.webhookSignatureKeySet ? "signature key set" : "signature key missing"}
+                  </dd>
+                </dl>
+                {squareDiag.check.locations && squareDiag.check.locations.length > 0 && (
+                  <p className="text-xs mt-3" style={{ color: "var(--ink-soft)" }}>
+                    Locations on this account:{" "}
+                    {squareDiag.check.locations.map(l => `${l.name ?? "—"} (${l.id ?? "?"})`).join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
           {ordersNote && (
             <p className="text-sm mb-4" style={{ color: "var(--ink-soft)" }}>{ordersNote}</p>
           )}

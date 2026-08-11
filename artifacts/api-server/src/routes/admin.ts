@@ -6,7 +6,10 @@ import { requireAdmin, isValidAdminToken } from "../middleware/auth";
 import { logger } from "../lib/logger";
 import { sendCheckinReportEmail } from "../lib/email";
 import { listRedemptions, deleteRedemption } from "../lib/discounts";
-import { getSquareClient, getSquareLocationId, isSquareLocationConfigured } from "../lib/square";
+import {
+  getSquareClient, getSquareLocationId, isSquareLocationConfigured,
+  isSandboxMode, squareErrorDetails,
+} from "../lib/square";
 import { toApiEvent } from "./events";
 
 const router: IRouter = Router();
@@ -475,6 +478,68 @@ router.delete("/admin/discount-redemptions/:id", requireAdmin, async (req, res):
     return;
   }
   res.sendStatus(204);
+});
+
+// --- Square diagnostics -------------------------------------------------------
+
+// Checkout failures are deliberately vague to guests, which leaves the operator
+// with nowhere to see why. This is a read-only probe of the Square config: it
+// lists the account's locations and reports whether SQUARE_LOCATION_ID is one
+// of them, which is what catches a token/environment mismatch.
+router.get("/admin/square/diagnostics", requireAdmin, async (_req, res): Promise<void> => {
+  const token = process.env.SQUARE_ACCESS_TOKEN ?? "";
+  const locationId = getSquareLocationId();
+  const environment = process.env.SQUARE_ENVIRONMENT ?? "(unset — treated as sandbox)";
+
+  const configured = {
+    environment,
+    effectiveEnvironment: isSandboxMode() ? "sandbox" : "production",
+    accessTokenSet: token.length > 0,
+    accessTokenLength: token.length,
+    locationId: locationId || null,
+    locationLooksLikePlaceholder: !isSquareLocationConfigured() && locationId.length > 0,
+    webhookUrlSet: Boolean(process.env.SQUARE_WEBHOOK_URL),
+    webhookSignatureKeySet: Boolean(process.env.SQUARE_WEBHOOK_SIGNATURE_KEY),
+  };
+
+  const client = getSquareClient();
+  if (!client) {
+    res.json({ configured, check: { ok: false, reason: "SQUARE_ACCESS_TOKEN is not set." } });
+    return;
+  }
+
+  try {
+    const result = await client.locations.list();
+    const locations = (result.locations ?? []).map((l: { id?: string; name?: string; status?: string }) => ({
+      id: l.id ?? null,
+      name: l.name ?? null,
+      status: l.status ?? null,
+    }));
+    const match = locations.find((l: { id: string | null }) => l.id === locationId);
+    res.json({
+      configured,
+      check: {
+        ok: Boolean(match),
+        reason: match
+          ? `SQUARE_LOCATION_ID matches "${match.name}" in the ${configured.effectiveEnvironment} environment.`
+          : `SQUARE_LOCATION_ID is not one of this account's ${configured.effectiveEnvironment} locations. ` +
+            "That usually means SQUARE_ENVIRONMENT and the access token disagree — a production token with " +
+            "SQUARE_ENVIRONMENT unset talks to sandbox, where the location does not exist.",
+        locations,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, "Square diagnostics call failed");
+    res.json({
+      configured,
+      check: {
+        ok: false,
+        reason: `Square rejected the request in the ${configured.effectiveEnvironment} environment.`,
+        squareErrors: squareErrorDetails(err),
+        message: err instanceof Error ? err.message : String(err),
+      },
+    });
+  }
 });
 
 // --- Image uploads ------------------------------------------------------------

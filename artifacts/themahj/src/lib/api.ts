@@ -315,6 +315,30 @@ export async function adminListOrders(): Promise<{ orders: AdminOrder[]; note?: 
   return request<{ orders: AdminOrder[]; note?: string }>("/admin/orders", { headers: adminHeaders() });
 }
 
+export interface SquareDiagnostics {
+  configured: {
+    environment: string;
+    effectiveEnvironment: string;
+    accessTokenSet: boolean;
+    accessTokenLength: number;
+    locationId: string | null;
+    locationLooksLikePlaceholder: boolean;
+    webhookUrlSet: boolean;
+    webhookSignatureKeySet: boolean;
+  };
+  check: {
+    ok: boolean;
+    reason: string;
+    locations?: Array<{ id: string | null; name: string | null; status: string | null }>;
+    squareErrors?: Array<{ category?: string; code?: string; detail?: string; field?: string }>;
+    message?: string;
+  };
+}
+
+export async function adminSquareDiagnostics(): Promise<SquareDiagnostics> {
+  return request<SquareDiagnostics>("/admin/square/diagnostics", { headers: adminHeaders() });
+}
+
 // ---------- Admin: discount codes ----------
 
 export async function adminListDiscountCodes(): Promise<AdminDiscountCode[]> {
