@@ -22,7 +22,6 @@ export function toApiEvent(row: typeof eventsTable.$inferSelect) {
     host: row.host,
     published: row.published,
     featured: row.featured,
-    troop: row.troop,
     reminderHoursBefore: row.reminderHoursBefore ?? null,
   };
 }

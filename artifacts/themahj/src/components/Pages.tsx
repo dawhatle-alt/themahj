@@ -2,6 +2,7 @@ import { motion, type Variants } from "framer-motion";
 import { TileFan, Tile } from "@/components/Tiles";
 import type { ApiEvent } from "@/lib/api";
 import { categoryMeta, fmtShort } from "@/lib/data";
+import { useCategories } from "@/lib/categories";
 import portrait from "@/assets/about/image1.jpeg";
 import tilesAction from "@/assets/about/image0.jpeg";
 
@@ -15,6 +16,7 @@ const reveal: Variants = {
 
 // ---------------- HOME ----------------
 export function Home({ events, go }: { events: ApiEvent[]; go: (p: string) => void }) {
+  const categories = useCategories();
   const upcoming = [...events].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
   return (
     <div>
@@ -85,8 +87,8 @@ export function Home({ events, go }: { events: ApiEvent[]; go: (p: string) => vo
                     <span className="font-display text-2xl leading-none mt-1">{d.day}</span>
                   </div>
                   <div>
-                    <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category).chip}`}>
-                      {categoryMeta(ev.category).label}
+                    <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category, categories).chip}`}>
+                      {categoryMeta(ev.category, categories).label}
                     </span>
                     <h3 className="font-display text-xl mt-2 leading-snug">{ev.title}</h3>
                     <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>{ev.time}</p>

@@ -18,9 +18,18 @@ export interface ApiEvent {
   host: string;
   published: boolean;
   featured: boolean;
-  /** Marks the booking as being for a troop, independently of category. */
-  troop: boolean;
   reminderHoursBefore: number | null;
+}
+
+export interface ApiCategory {
+  id: number;
+  name: string;
+  /** A palette key from CATEGORY_COLORS in lib/data.ts, not a colour value. */
+  color: string;
+}
+
+export interface AdminCategory extends ApiCategory {
+  eventCount: number;
 }
 
 export interface ApiPhoto {
@@ -154,6 +163,11 @@ export async function listEvents(): Promise<ApiEvent[]> {
   return data.events;
 }
 
+export async function listCategories(): Promise<ApiCategory[]> {
+  const data = await request<{ categories: ApiCategory[] }>("/categories");
+  return data.categories;
+}
+
 export async function registerFree(input: RegistrationInput): Promise<ApiRegistration> {
   const data = await request<{ registration: ApiRegistration }>(
     "/registrations",
@@ -234,7 +248,6 @@ export type EventInput = {
   host?: string;
   published: boolean;
   featured?: boolean;
-  troop?: boolean;
   reminderHoursBefore?: number | null;
 };
 
@@ -316,6 +329,36 @@ export async function adminUploadPhoto(
     jsonInit("POST", { objectPath, caption: meta.caption, eventLabel: meta.eventLabel }, adminHeaders()),
   );
   return data.photo;
+}
+
+// ---------- Admin: categories ----------
+
+export async function adminListCategories(): Promise<AdminCategory[]> {
+  const data = await request<{ categories: AdminCategory[] }>("/admin/categories", { headers: adminHeaders() });
+  return data.categories;
+}
+
+export async function adminCreateCategory(input: { name: string; color: string }): Promise<ApiCategory> {
+  const data = await request<{ category: ApiCategory }>(
+    "/admin/categories",
+    jsonInit("POST", input, adminHeaders()),
+  );
+  return data.category;
+}
+
+export async function adminUpdateCategory(
+  id: number,
+  input: { name?: string; color?: string },
+): Promise<ApiCategory> {
+  const data = await request<{ category: ApiCategory }>(
+    `/admin/categories/${id}`,
+    jsonInit("PUT", input, adminHeaders()),
+  );
+  return data.category;
+}
+
+export async function adminDeleteCategory(id: number): Promise<void> {
+  await request<void>(`/admin/categories/${id}`, { method: "DELETE", headers: adminHeaders() });
 }
 
 // ---------- Admin: orders ----------

@@ -3,7 +3,8 @@ import { motion, type Variants } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { ApiEvent, ApiRegistration } from "@/lib/api";
 import { checkout, getConfirmation, registerFree, verifyPayment } from "@/lib/api";
-import { categoryMeta, fmtDate, fmtPrice } from "@/lib/data";
+import { categoryMeta, colorMeta, fmtDate, fmtPrice } from "@/lib/data";
+import { useCategories } from "@/lib/categories";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -22,6 +23,7 @@ export function Events({ events, loadError, onRegistered }: {
   loadError: boolean;
   onRegistered: () => void;
 }) {
+  const categories = useCategories();
   const today = new Date();
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState<ApiEvent | null>(null);
@@ -148,11 +150,11 @@ export function Events({ events, loadError, onRegistered }: {
                         className="sm:hidden w-full py-1.5 flex justify-center"
                         aria-label={`${ev.title} — reserve a seat`}>
                         <span className="w-2 h-2 rounded-full block"
-                          style={{ background: categoryMeta(ev.category).calendar }} />
+                          style={{ background: categoryMeta(ev.category, categories).calendar }} />
                       </button>
                       <button onClick={() => openSignup(ev)}
                         className="hidden sm:block w-full text-left text-[10px] leading-tight mt-1 px-1.5 py-1 rounded font-medium truncate"
-                        style={{ background: categoryMeta(ev.category).calendar, color: "#fff" }}
+                        style={{ background: categoryMeta(ev.category, categories).calendar, color: "#fff" }}
                         title={ev.title}>
                         {ev.title}
                       </button>
@@ -163,9 +165,10 @@ export function Events({ events, loadError, onRegistered }: {
             })}
           </div>
           <div className="flex gap-4 mt-4 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>
-            {[["var(--jade)", "Class"], ["var(--rose)", "Open Play"], ["var(--gold)", "Troop"]].map(([c, l]) => (
-              <span key={l} className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: c }} /> {l}
+            {categories.map(c => (
+              <span key={c.id} className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm inline-block"
+                  style={{ background: colorMeta(c.color).calendar }} /> {c.name}
               </span>
             ))}
           </div>
@@ -207,8 +210,8 @@ export function Events({ events, loadError, onRegistered }: {
                 )}
                 <div className="flex justify-between items-start gap-3 flex-wrap">
                   <div>
-                    <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category).chip}`}>
-                      {categoryMeta(ev.category).label}
+                    <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category, categories).chip}`}>
+                      {categoryMeta(ev.category, categories).label}
                     </span>
                     <h3 className="font-display text-2xl mt-2">{ev.title}</h3>
                     <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>

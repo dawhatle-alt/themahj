@@ -61,7 +61,6 @@ router.post("/admin/events", requireAdmin, async (req, res): Promise<void> => {
       host: (b.host as string) ?? "The Mahj Edit",
       published: b.published === true,
       featured: b.featured === true,
-      troop: b.troop === true,
       reminderHoursBefore: b.reminderHoursBefore != null ? Number(b.reminderHoursBefore) : null,
     })
     .returning();
@@ -91,7 +90,6 @@ router.put("/admin/events/:id", requireAdmin, async (req, res): Promise<void> =>
   if (b.host !== undefined) updateData.host = b.host;
   if (b.published !== undefined) updateData.published = b.published;
   if (b.featured !== undefined) updateData.featured = b.featured;
-  if (b.troop !== undefined) updateData.troop = b.troop === true;
   if ("reminderHoursBefore" in b) updateData.reminderHoursBefore = b.reminderHoursBefore != null ? Number(b.reminderHoursBefore) : null;
   updateData.updatedAt = new Date();
   const [row] = await db

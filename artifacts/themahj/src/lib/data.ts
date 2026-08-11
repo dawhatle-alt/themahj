@@ -1,26 +1,46 @@
 // Display helpers shared across pages. Event data itself now lives in the
 // database and is fetched through lib/api.ts.
 
-export const CATEGORIES = ["Class", "Open Play", "Troop Mahjong"] as const;
+// Categories are admin-managed (see lib/categories.ts). A category stores a
+// palette key rather than a colour value, so anything created later still lands
+// inside the site's scheme. Keep these keys in sync with routes/categories.ts.
+export const CATEGORY_COLORS = ["jade", "rose", "gold", "crak", "ink"] as const;
+export type CategoryColor = (typeof CATEGORY_COLORS)[number];
 
 export interface CategoryMeta {
   label: string;
   chip: string;      // tailwind classes for the pill badge
   calendar: string;  // css color for calendar blocks / legend
+  swatch: string;    // css color for the admin colour picker
 }
 
-const CATEGORY_META: Record<string, CategoryMeta> = {
-  "Class": { label: "Class", chip: "bg-[var(--jade-soft)] text-[var(--jade)]", calendar: "var(--jade)" },
-  "Open Play": { label: "Open Play", chip: "bg-[var(--blush)] text-[var(--rose-deep)]", calendar: "var(--rose)" },
-  "Troop Mahjong": { label: "Troop Mahjong", chip: "bg-[#F3E7D3] text-[var(--gold)]", calendar: "var(--gold)" },
+const COLOR_META: Record<CategoryColor, Omit<CategoryMeta, "label">> = {
+  jade: { chip: "bg-[var(--jade-soft)] text-[var(--jade)]", calendar: "var(--jade)", swatch: "var(--jade)" },
+  rose: { chip: "bg-[var(--blush)] text-[var(--rose-deep)]", calendar: "var(--rose)", swatch: "var(--rose)" },
+  gold: { chip: "bg-[#F3E7D3] text-[var(--gold)]", calendar: "var(--gold)", swatch: "var(--gold)" },
+  crak: { chip: "bg-[#FBECEC] text-[var(--crak)]", calendar: "var(--crak)", swatch: "var(--crak)" },
+  ink: { chip: "bg-[var(--ivory-deep)] text-[var(--ink-soft)]", calendar: "var(--ink-soft)", swatch: "var(--ink-soft)" },
 };
 
-export function categoryMeta(category: string): CategoryMeta {
-  return CATEGORY_META[category] ?? {
-    label: category,
-    chip: "bg-[#F3E7D3] text-[var(--gold)]",
-    calendar: "var(--gold)",
-  };
+export const CATEGORY_COLOR_LABELS: Record<CategoryColor, string> = {
+  jade: "Jade", rose: "Rose", gold: "Gold", crak: "Red", ink: "Neutral",
+};
+
+export function colorMeta(color: string): Omit<CategoryMeta, "label"> {
+  return COLOR_META[color as CategoryColor] ?? COLOR_META.gold;
+}
+
+/**
+ * Resolves an event's category name to its display styling. `categories` comes
+ * from useCategories(); an unknown name (a category deleted mid-session, say)
+ * falls back to gold rather than rendering unstyled.
+ */
+export function categoryMeta(
+  category: string,
+  categories: { name: string; color: string }[] = [],
+): CategoryMeta {
+  const found = categories.find((c) => c.name === category);
+  return { label: category, ...colorMeta(found?.color ?? "gold") };
 }
 
 // ---------- Formatting helpers ----------

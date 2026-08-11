@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type {
   AdminDiscountCode, AdminOrder, AdminRedemption, AdminRegistration,
-  ApiEvent, ApiPhoto, EventInput, SquareDiagnostics,
+  AdminCategory, ApiEvent, ApiPhoto, EventInput, SquareDiagnostics,
 } from "@/lib/api";
 import {
   adminCreateDiscountCode, adminCreateEvent, adminDeleteDiscountCode, adminDeleteEvent,
@@ -11,8 +11,13 @@ import {
   adminListDiscountCodes, adminListEvents, adminListOrders, adminListRedemptions,
   adminListRegistrations, adminLogin, adminSquareDiagnostics, adminUpdateDiscountCode,
   adminUpdateEvent, adminUploadImage, adminUploadPhoto, getAdminToken, listGallery, setAdminToken,
+  adminCreateCategory, adminDeleteCategory, adminListCategories, adminUpdateCategory,
 } from "@/lib/api";
-import { CATEGORIES, REMINDER_OPTIONS, categoryMeta, fmtDate, fmtPrice, formatTimeRange } from "@/lib/data";
+import {
+  CATEGORY_COLORS, CATEGORY_COLOR_LABELS, REMINDER_OPTIONS,
+  categoryMeta, colorMeta, fmtDate, fmtPrice, formatTimeRange,
+} from "@/lib/data";
+import { invalidateCategories, useCategories } from "@/lib/categories";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -114,15 +119,14 @@ type EventDraft = {
   totalSpots: number;
   description: string;
   published: boolean;
-  troop: boolean;
   imagePath: string | null;
   reminderHoursBefore: number | null;
 };
 
-const emptyEvent = (): EventDraft => ({
-  title: "", category: "Open Play", date: "", startTime: "", endTime: "",
+const emptyEvent = (defaultCategory = "Open Play"): EventDraft => ({
+  title: "", category: defaultCategory, date: "", startTime: "", endTime: "",
   location: "Leander, TX", price: "15", totalSpots: 16, description: "",
-  published: true, troop: false, imagePath: null, reminderHoursBefore: 24,
+  published: true, imagePath: null, reminderHoursBefore: 24,
 });
 
 function draftToInput(d: EventDraft): EventInput {
@@ -141,7 +145,6 @@ function draftToInput(d: EventDraft): EventInput {
     totalSpots: d.totalSpots,
     description: d.description.trim(),
     published: d.published,
-    troop: d.troop,
     imagePath: d.imagePath,
     reminderHoursBefore: d.reminderHoursBefore,
   };
@@ -151,9 +154,10 @@ const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 const shortDateTime = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
-type Tab = "events" | "registrations" | "orders" | "discounts" | "photos";
+type Tab = "events" | "registrations" | "orders" | "discounts" | "categories" | "photos";
 
 export function Admin() {
+  const categories = useCategories();
   const [authed, setAuthed] = useState(() => !!getAdminToken());
   const [pass, setPass] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -169,6 +173,9 @@ export function Admin() {
   const [squareChecking, setSquareChecking] = useState(false);
   const [codes, setCodes] = useState<AdminDiscountCode[]>([]);
   const [redemptions, setRedemptions] = useState<AdminRedemption[]>([]);
+  const [adminCategories, setAdminCategories] = useState<AdminCategory[]>([]);
+  const [catDraft, setCatDraft] = useState({ name: "", color: "gold" });
+  const [catEditing, setCatEditing] = useState<AdminCategory | null>(null);
 
   const [editing, setEditing] = useState<ApiEvent | null>(null);
   const [draft, setDraft] = useState<EventDraft>(emptyEvent());
@@ -203,6 +210,7 @@ export function Admin() {
     adminListOrders()
       .then(r => { setOrders(r.orders); setOrdersNote(r.note ?? null); })
       .catch(() => { setOrders([]); setOrdersNote("Could not load orders from Square."); });
+    adminListCategories().then(setAdminCategories).catch(() => setAdminCategories([]));
     adminListDiscountCodes().then(setCodes).catch(() => setCodes([]));
     adminListRedemptions().then(setRedemptions).catch(() => setRedemptions([]));
   }
@@ -256,7 +264,6 @@ export function Admin() {
       totalSpots: ev.totalSpots,
       description: ev.description,
       published: ev.published,
-      troop: ev.troop,
       imagePath: ev.imagePath,
       reminderHoursBefore: ev.reminderHoursBefore,
     });
@@ -272,7 +279,7 @@ export function Admin() {
         await adminCreateEvent(draftToInput(draft));
       }
       setEditing(null);
-      setDraft(emptyEvent());
+      setDraft(emptyEvent(categories[0]?.name));
       refresh();
     } catch (err) {
       fail(err, "Could not save the event");
@@ -376,6 +383,40 @@ export function Admin() {
       setPhotos(photos.filter(p => p.id !== id));
     } catch (err) {
       fail(err, "Could not delete the photo");
+    }
+  }
+
+  async function saveCategory() {
+    const name = catDraft.name.trim();
+    if (!name || busy) return;
+    setBusy(true);
+    try {
+      if (catEditing) {
+        await adminUpdateCategory(catEditing.id, { name, color: catDraft.color });
+      } else {
+        await adminCreateCategory({ name, color: catDraft.color });
+      }
+      setCatDraft({ name: "", color: "gold" });
+      setCatEditing(null);
+      invalidateCategories();
+      adminListCategories().then(setAdminCategories).catch(() => undefined);
+      // A rename cascades to events, so the events list is stale now.
+      adminListEvents().then(setEvents).catch(() => undefined);
+    } catch (err) {
+      fail(err, "Could not save the category");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeCategory(c: AdminCategory) {
+    if (!window.confirm(`Delete the "${c.name}" category?`)) return;
+    try {
+      await adminDeleteCategory(c.id);
+      invalidateCategories();
+      adminListCategories().then(setAdminCategories).catch(() => undefined);
+    } catch (err) {
+      fail(err, "Could not delete the category");
     }
   }
 
@@ -493,6 +534,7 @@ export function Admin() {
         {tabBtn("registrations", `Registrations (${registrations.length})`)}
         {tabBtn("orders", "Orders")}
         {tabBtn("discounts", "Discount Codes")}
+        {tabBtn("categories", "Categories")}
         {tabBtn("photos", "Photos")}
       </div>
 
@@ -505,7 +547,10 @@ export function Admin() {
               <input className={inputCls} placeholder="Event title *" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} />
               <div className="flex gap-3">
                 <select className={inputCls} value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value })}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  {draft.category && !categories.some(c => c.name === draft.category) && (
+                    <option value={draft.category}>{draft.category} (removed)</option>
+                  )}
                 </select>
                 <input className={inputCls} type="date" value={draft.date} onChange={e => setDraft({ ...draft, date: e.target.value })} />
               </div>
@@ -631,23 +676,13 @@ export function Admin() {
                 <input type="checkbox" checked={draft.published} onChange={e => setDraft({ ...draft, published: e.target.checked })} />
                 Published (visible on the site)
               </label>
-              <label className="flex items-start gap-2 text-sm" style={{ color: "var(--ink-soft)" }}>
-                <input type="checkbox" className="mt-1" checked={draft.troop}
-                  onChange={e => setDraft({ ...draft, troop: e.target.checked })} />
-                <span>
-                  Troop Mahjong event
-                  <span className="block text-[11px]">
-                    Separate from the category above, so a Class booked by a troop can be flagged too. Admin only — guests don't see this.
-                  </span>
-                </span>
-              </label>
               <div className="flex gap-3">
                 <button onClick={() => void saveEvent()} disabled={!draft.title.trim() || !draft.date || busy || coverUploading}
                   className="btn-jade px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] disabled:opacity-40">
                   {busy ? "Saving…" : editing ? "Save changes" : "Add event"}
                 </button>
                 {editing && (
-                  <button onClick={() => { setEditing(null); setDraft(emptyEvent()); }}
+                  <button onClick={() => { setEditing(null); setDraft(emptyEvent(categories[0]?.name)); }}
                     className="px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] border" style={{ borderColor: "#E9DFD0" }}>
                     Cancel
                   </button>
@@ -664,15 +699,9 @@ export function Admin() {
                       className="w-16 h-12 object-cover rounded border shrink-0" style={{ borderColor: "#E9DFD0" }} />
                   )}
                   <div>
-                    <span className={`inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ${categoryMeta(ev.category).chip}`}>
-                      {categoryMeta(ev.category).label}
+                    <span className={`inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ${categoryMeta(ev.category, categories).chip}`}>
+                      {categoryMeta(ev.category, categories).label}
                     </span>
-                    {ev.troop && (
-                      <span className="inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ml-2"
-                        style={{ background: "#F3E7D3", color: "var(--gold)" }}>
-                        Troop
-                      </span>
-                    )}
                     {!ev.published && (
                       <span className="inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ml-2 bg-[#EFE7DA]" style={{ color: "var(--ink-soft)" }}>
                         Draft
@@ -1064,6 +1093,112 @@ export function Admin() {
                   </button>
                   <button onClick={() => void deleteCode(c.id)}
                     className="px-4 py-1.5 rounded-full text-xs border" style={{ borderColor: "var(--crak)", color: "var(--crak)" }}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CATEGORIES TAB */}
+      {tab === "categories" && (
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 items-start">
+          <div className="bg-white/70 border rounded-lg p-6" style={{ borderColor: "#E9DFD0" }}>
+            <h2 className="font-display text-2xl">{catEditing ? "Edit category" : "New category"}</h2>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label htmlFor="cat-name" className="block text-[11px] uppercase tracking-[0.12em] mb-2"
+                  style={{ color: "var(--gold)" }}>
+                  Name
+                </label>
+                <input id="cat-name" className={inputCls} maxLength={40}
+                  placeholder="e.g. Private Party" value={catDraft.name}
+                  onChange={e => setCatDraft({ ...catDraft, name: e.target.value })} />
+              </div>
+
+              {/* A fixed palette rather than a colour picker — categories added
+                  later still have to look like they belong to the site. */}
+              <fieldset>
+                <legend className="text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold)" }}>
+                  Colour
+                </legend>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_COLORS.map(c => {
+                    const selected = catDraft.color === c;
+                    return (
+                      <button key={c} type="button" aria-pressed={selected}
+                        onClick={() => setCatDraft({ ...catDraft, color: c })}
+                        className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-full text-xs uppercase tracking-[0.12em]"
+                        style={{
+                          border: selected ? `2px solid ${colorMeta(c).swatch}` : "1px solid #E9DFD0",
+                          color: selected ? colorMeta(c).swatch : "var(--ink-soft)",
+                        }}>
+                        <span className="w-3 h-3 rounded-full" style={{ background: colorMeta(c).swatch }} />
+                        {CATEGORY_COLOR_LABELS[c]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold)" }}>Preview</p>
+                <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${colorMeta(catDraft.color).chip}`}>
+                  {catDraft.name.trim() || "Category name"}
+                </span>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => void saveCategory()} disabled={!catDraft.name.trim() || busy}
+                  className="btn-jade px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] disabled:opacity-40">
+                  {busy ? "Saving…" : catEditing ? "Save changes" : "Add category"}
+                </button>
+                {catEditing && (
+                  <button onClick={() => { setCatEditing(null); setCatDraft({ name: "", color: "gold" }); }}
+                    className="px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] border"
+                    style={{ borderColor: "#E9DFD0" }}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px]" style={{ color: "var(--ink-soft)" }}>
+                Categories appear in the event form, as the badge on each event, and in the calendar legend.
+                Renaming one updates every event using it.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {adminCategories.length === 0 && (
+              <div className="bg-white/70 border rounded-lg p-8 text-center" style={{ borderColor: "#E9DFD0" }}>
+                <p className="text-sm" style={{ color: "var(--ink-soft)" }}>No categories yet — create one on the left.</p>
+              </div>
+            )}
+            {adminCategories.map(c => (
+              <div key={c.id} className="bg-white/70 border rounded-lg p-4 flex items-center justify-between gap-4 flex-wrap"
+                style={{ borderColor: "#E9DFD0" }}>
+                <div className="min-w-0">
+                  <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${colorMeta(c.color).chip}`}>
+                    {c.name}
+                  </span>
+                  <p className="text-xs mt-1.5" style={{ color: "var(--ink-soft)" }}>
+                    {c.eventCount} event{c.eventCount === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setCatEditing(c); setCatDraft({ name: c.name, color: c.color }); }}
+                    className="px-4 py-1.5 rounded-full text-xs border"
+                    style={{ borderColor: "var(--jade)", color: "var(--jade)" }}>
+                    Edit
+                  </button>
+                  {/* Deleting a category in use would orphan those events, so the
+                      control is disabled rather than failing after the click. */}
+                  <button onClick={() => void removeCategory(c)} disabled={c.eventCount > 0}
+                    title={c.eventCount > 0 ? `Used by ${c.eventCount} event${c.eventCount === 1 ? "" : "s"} — move them to another category first.` : undefined}
+                    className="px-4 py-1.5 rounded-full text-xs border disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ borderColor: "var(--crak)", color: "var(--crak)" }}>
                     Delete
                   </button>
                 </div>
