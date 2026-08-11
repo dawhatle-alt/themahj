@@ -182,6 +182,8 @@ export function Admin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-md border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--rose)]";
+  const statLabelCls = "text-[11px] uppercase tracking-[0.12em]";
+  const statValueCls = "text-3xl font-medium tabular-nums leading-tight mt-1";
 
   function fail(err: unknown, fallback: string) {
     setNotice(err instanceof Error ? err.message : fallback);
@@ -688,10 +690,16 @@ export function Admin() {
           so they re-scope the moment an event is picked. */}
       {tab === "registrations" && registrations.length > 0 && (
         <div className="mt-8 bg-white/70 border rounded-lg p-5" style={{ borderColor: "#E9DFD0" }}>
-          <label className="block text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
-            Filter by event
+          {/* Label above the control, not beside it: the select is capped at
+              max-w-md, which left room for an inline label to sit alongside. */}
+          <div className="max-w-md">
+            <label htmlFor="reg-event-filter"
+              className="block text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold)" }}>
+              Filter by event
+            </label>
             <select
-              className={inputCls + " mt-1 max-w-md"}
+              id="reg-event-filter"
+              className={inputCls}
               value={regEventFilter === "all" ? "all" : String(regEventFilter)}
               onChange={e => setRegEventFilter(e.target.value === "all" ? "all" : Number(e.target.value))}>
               <option value="all">All events ({registrations.length})</option>
@@ -702,34 +710,38 @@ export function Admin() {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
 
-          <dl aria-live="polite" className="flex flex-wrap gap-x-10 gap-y-4 mt-5">
+          {/* Figures stay in the body sans (Jost) to match the table below.
+              font-display is Cormorant Garamond, whose oldstyle numerals render
+              "1" as a roman numeral next to lining figures. Hierarchy comes
+              from size and weight instead of a second family. */}
+          <dl aria-live="polite" className="flex flex-wrap gap-x-10 gap-y-4 mt-6">
             <div>
-              <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>
+              <dt className={statLabelCls} style={{ color: "var(--ink-soft)" }}>
                 {filteredEvent ? "Registrations for this event" : "Total registrations"}
               </dt>
-              <dd className="font-display text-3xl tabular-nums leading-tight">{regStats.total}</dd>
+              <dd className={statValueCls}>{regStats.total}</dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>Seats booked</dt>
-              <dd className="font-display text-3xl tabular-nums leading-tight">
+              <dt className={statLabelCls} style={{ color: "var(--ink-soft)" }}>Seats booked</dt>
+              <dd className={statValueCls}>
                 {regStats.seats}
                 {filteredEvent && (
-                  <span className="text-base ml-2" style={{ color: "var(--ink-soft)" }}>
+                  <span className="text-base font-normal ml-1.5" style={{ color: "var(--ink-soft)" }}>
                     of {filteredEvent.totalSpots}
                   </span>
                 )}
               </dd>
             </div>
             <div>
-              <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>Collected</dt>
-              <dd className="font-display text-3xl tabular-nums leading-tight">{money(regStats.revenueCents)}</dd>
+              <dt className={statLabelCls} style={{ color: "var(--ink-soft)" }}>Collected</dt>
+              <dd className={statValueCls}>{money(regStats.revenueCents)}</dd>
             </div>
             {filteredEvent && (
               <div>
-                <dt className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>Seats left</dt>
-                <dd className="font-display text-3xl tabular-nums leading-tight"
+                <dt className={statLabelCls} style={{ color: "var(--ink-soft)" }}>Seats left</dt>
+                <dd className={statValueCls}
                   style={{ color: filteredEvent.spotsLeft === 0 ? "var(--crak)" : "var(--jade)" }}>
                   {filteredEvent.spotsLeft}
                 </dd>
