@@ -22,6 +22,10 @@ export const eventsTable = pgTable("events", {
   host: text("host").notNull().default("The Mahj Edit"),
   published: boolean("published").notNull().default(false),
   featured: boolean("featured").notNull().default(false),
+  // Orthogonal to category: category is the event's format (Class / Open Play /
+  // Troop Mahjong), this marks the booking as being for a troop — so a Class run
+  // for a troop can be flagged without changing what kind of session it is.
+  troop: boolean("troop").notNull().default(false),
   reminderHoursBefore: integer("reminder_hours_before"),
   reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

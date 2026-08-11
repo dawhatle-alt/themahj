@@ -18,6 +18,8 @@ export interface ApiEvent {
   host: string;
   published: boolean;
   featured: boolean;
+  /** Marks the booking as being for a troop, independently of category. */
+  troop: boolean;
   reminderHoursBefore: number | null;
 }
 
@@ -232,6 +234,7 @@ export type EventInput = {
   host?: string;
   published: boolean;
   featured?: boolean;
+  troop?: boolean;
   reminderHoursBefore?: number | null;
 };
 

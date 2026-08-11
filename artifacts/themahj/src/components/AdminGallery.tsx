@@ -114,6 +114,7 @@ type EventDraft = {
   totalSpots: number;
   description: string;
   published: boolean;
+  troop: boolean;
   imagePath: string | null;
   reminderHoursBefore: number | null;
 };
@@ -121,7 +122,7 @@ type EventDraft = {
 const emptyEvent = (): EventDraft => ({
   title: "", category: "Open Play", date: "", startTime: "", endTime: "",
   location: "Leander, TX", price: "15", totalSpots: 16, description: "",
-  published: true, imagePath: null, reminderHoursBefore: 24,
+  published: true, troop: false, imagePath: null, reminderHoursBefore: 24,
 });
 
 function draftToInput(d: EventDraft): EventInput {
@@ -140,6 +141,7 @@ function draftToInput(d: EventDraft): EventInput {
     totalSpots: d.totalSpots,
     description: d.description.trim(),
     published: d.published,
+    troop: d.troop,
     imagePath: d.imagePath,
     reminderHoursBefore: d.reminderHoursBefore,
   };
@@ -254,6 +256,7 @@ export function Admin() {
       totalSpots: ev.totalSpots,
       description: ev.description,
       published: ev.published,
+      troop: ev.troop,
       imagePath: ev.imagePath,
       reminderHoursBefore: ev.reminderHoursBefore,
     });
@@ -628,6 +631,16 @@ export function Admin() {
                 <input type="checkbox" checked={draft.published} onChange={e => setDraft({ ...draft, published: e.target.checked })} />
                 Published (visible on the site)
               </label>
+              <label className="flex items-start gap-2 text-sm" style={{ color: "var(--ink-soft)" }}>
+                <input type="checkbox" className="mt-1" checked={draft.troop}
+                  onChange={e => setDraft({ ...draft, troop: e.target.checked })} />
+                <span>
+                  Troop Mahjong event
+                  <span className="block text-[11px]">
+                    Separate from the category above, so a Class booked by a troop can be flagged too. Admin only — guests don't see this.
+                  </span>
+                </span>
+              </label>
               <div className="flex gap-3">
                 <button onClick={() => void saveEvent()} disabled={!draft.title.trim() || !draft.date || busy || coverUploading}
                   className="btn-jade px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] disabled:opacity-40">
@@ -654,6 +667,12 @@ export function Admin() {
                     <span className={`inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ${categoryMeta(ev.category).chip}`}>
                       {categoryMeta(ev.category).label}
                     </span>
+                    {ev.troop && (
+                      <span className="inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ml-2"
+                        style={{ background: "#F3E7D3", color: "var(--gold)" }}>
+                        Troop
+                      </span>
+                    )}
                     {!ev.published && (
                       <span className="inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full ml-2 bg-[#EFE7DA]" style={{ color: "var(--ink-soft)" }}>
                         Draft
