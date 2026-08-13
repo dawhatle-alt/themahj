@@ -33,6 +33,29 @@ pnpm monorepo, deployed on Vercel:
   lands; hour-scale lead times need a Pro plan and a more frequent schedule.
 - **Admin**: passcode login (checked against `ADMIN_TOKEN`), event CRUD, signups table, per-event check-in CSV, photo gallery uploads to Supabase Storage.
 
+## Editable page copy
+
+The About page's wording is owner-editable from the admin panel's **Page Text**
+tab, so routine rewording needs no deploy. Copy lives in the `site_content`
+key/value table (`about.lead`, `about.body`, …) and is served publicly from
+`/api/content`.
+
+Three things keep this safe to hand to a non-technical owner:
+
+- **Plain text only, never markup.** The page supplies all styling, so an edit
+  cannot break the layout. `*.body` keys split into paragraphs on blank lines.
+- **Writes are restricted to an allow-list** (`EDITABLE_KEYS` in
+  `artifacts/api-server/src/routes/content.ts`). An unknown key is a `400`
+  rather than a new row nothing reads.
+- **Every key has a code-level fallback** (`CONTENT_DEFAULTS` in
+  `artifacts/themahj/src/lib/content.ts`). A missing row, an empty table, or a
+  failed request renders the original wording instead of a blank page. The
+  panel's "Reset to original wording" restores these.
+
+To make another string editable: add the key to `EDITABLE_KEYS`, add it to
+`CONTENT_DEFAULTS`, add a row to `CONTENT_FIELDS` in `AdminGallery.tsx`, and
+render it through `useContent()`. Seed the key so the panel opens pre-filled.
+
 ## Local development
 
 ```sh
