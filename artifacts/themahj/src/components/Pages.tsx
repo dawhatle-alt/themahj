@@ -25,7 +25,7 @@ export function Home({ events, go }: { events: ApiEvent[]; go: (p: string) => vo
         <div>
           <motion.p className="eyebrow"
             variants={reveal} custom={0} initial="hidden" animate="visible">
-            Leander · North Austin, Texas
+            Georgetown · North Austin, Texas
           </motion.p>
           <motion.h1
             className="font-display text-[clamp(2.8rem,7vw,5.2rem)] leading-[0.98] mt-4"
@@ -173,14 +173,14 @@ export function About({ go }: { go: (p: string) => void }) {
             <motion.p className="font-display italic text-[1.6rem] leading-snug"
               style={{ color: "var(--rose-deep)" }}
               variants={reveal} custom={0.1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-              I'm Rhonda, founder of The Mahj Edit.
+              Meet the face behind The Mahj Edit. ✨
             </motion.p>
 
             {[
-              "The Mahj Edit was born from a simple idea: mahjong should be as beautiful and memorable as the connections it creates.",
-              "After discovering the game, I quickly fell in love with its blend of strategy, tradition, and community. What began as a personal passion evolved into a desire to create elevated mahjong experiences where people can learn, gather, and build lasting friendships.",
-              "Drawing on years of professional experience in leadership, learning, and skill development, I bring a thoughtful and welcoming approach to teaching. Whether you're brand new to the game or an experienced player looking to expand your circle, my goal is to create an environment where everyone feels comfortable, confident, and inspired.",
-              "Through private lessons, group classes, special events, and curated experiences, The Mahj Edit celebrates the art of gathering around the table. I believe the best games are about more than winning — they're about connection, laughter, and creating moments worth remembering.",
+              "I'm Rhonda, a mahjong enthusiast based in Georgetown, Texas. By day, I work in corporate leadership, but you'll often find me around a mahjong table with friends, family, and fellow enthusiasts.",
+              "What started as learning a new game quickly turned into a true passion. While I love the strategy and challenge of mahjong, what keeps me coming back are the friendships, laughter, and connections created around the table, along with the inevitable “Wait…whose turn is it?” moments that seem to happen in every game.",
+              "The Mahj Edit was born from that passion and a desire to create thoughtfully curated experiences where people can gather, play, learn, and connect. I'm also excited to be working toward bringing Troop Mahjong to Georgetown and creating even more opportunities for people to enjoy this incredible game together.",
+              "Whether you're a seasoned player or new to the game, I'm so glad you're here.",
             ].map((text, i) => (
               <motion.p key={i}
                 variants={reveal} custom={0.18 + i * 0.08}
@@ -191,7 +191,8 @@ export function About({ go }: { go: (p: string) => void }) {
 
             <motion.p className="font-display italic text-xl pt-1" style={{ color: "var(--gold)" }}
               variants={reveal} custom={0.52} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-              Welcome to The Mahj Edit. I'm excited to share a seat at the table with you.
+              Thank you for being here. I'm excited to grow this community with you,
+              one beautiful tile at a time. 🀄
             </motion.p>
 
             <motion.div variants={reveal} custom={0.58} initial="hidden" whileInView="visible" viewport={{ once: true }}>
@@ -268,7 +269,7 @@ export function Troop({ go }: { go: (p: string) => void }) {
           Troop Mahjong is a national social club founded by Kristel Powell in San Antonio,
           inspired by <em>Troop Beverly Hills</em> — American mahjong with themed events,
           friendship, and community for women. The Mahj Edit is proud to bring the Troop experience
-          to the Leander &amp; north Austin area.
+          to the Georgetown &amp; north Austin area.
         </motion.p>
         <motion.div className="hairline mt-10"
           initial={{ scaleX: 0, opacity: 0 }} animate={{ scaleX: 1, opacity: 1 }}

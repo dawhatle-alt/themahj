@@ -112,7 +112,7 @@ export default function App() {
                 className="uppercase tracking-[0.3em] leading-none"
                 style={{ fontSize: "0.57rem", color: "#7A6040", letterSpacing: "0.3em" }}
               >
-                Leander, Texas
+                Georgetown, Texas
               </span>
             </span>
           </button>
@@ -213,7 +213,7 @@ export default function App() {
           </div>
 
           <div className="text-sm leading-relaxed" style={{ color: "#8A7260" }}>
-            <p>Leander, Texas</p>
+            <p>Georgetown, Texas</p>
             <p>hello@themahjeditco.com</p>
             <p className="mt-2 text-xs" style={{ color: "#5C4A3A" }}>
               © {new Date().getFullYear()} The Mahj Edit. All rights reserved.

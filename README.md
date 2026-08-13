@@ -1,6 +1,6 @@
 # The Mahj Edit — themahjeditco.com
 
-Events site for **The Mahj Edit** (American mahjong classes, open play, and Troop Mahjong nights in Leander, TX). Guests browse the calendar and reserve seats — free events confirm instantly, paid events check out through Square. The owner manages everything from the built-in admin panel (footer → Admin).
+Events site for **The Mahj Edit** (American mahjong classes, open play, and Troop Mahjong nights in Georgetown, TX). Guests browse the calendar and reserve seats — free events confirm instantly, paid events check out through Square. The owner manages everything from the built-in admin panel (footer → Admin).
 
 ## Going live
 

@@ -125,7 +125,7 @@ type EventDraft = {
 
 const emptyEvent = (defaultCategory = "Open Play"): EventDraft => ({
   title: "", category: defaultCategory, date: "", startTime: "", endTime: "",
-  location: "Leander, TX", price: "15", totalSpots: 16, description: "",
+  location: "Georgetown, TX", price: "15", totalSpots: 16, description: "",
   published: true, imagePath: null, reminderHoursBefore: 24,
 });
 
