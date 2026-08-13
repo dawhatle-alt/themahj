@@ -168,6 +168,11 @@ export async function listCategories(): Promise<ApiCategory[]> {
   return data.categories;
 }
 
+export async function getContent(): Promise<Record<string, string>> {
+  const data = await request<{ content: Record<string, string> }>("/content");
+  return data.content;
+}
+
 export async function registerFree(input: RegistrationInput): Promise<ApiRegistration> {
   const data = await request<{ registration: ApiRegistration }>(
     "/registrations",
@@ -359,6 +364,28 @@ export async function adminUpdateCategory(
 
 export async function adminDeleteCategory(id: number): Promise<void> {
   await request<void>(`/admin/categories/${id}`, { method: "DELETE", headers: adminHeaders() });
+}
+
+// ---------- Admin: page text ----------
+
+export async function adminGetContent(): Promise<{
+  content: Record<string, string>;
+  editableKeys: string[];
+}> {
+  return request<{ content: Record<string, string>; editableKeys: string[] }>(
+    "/admin/content",
+    { headers: adminHeaders() },
+  );
+}
+
+export async function adminSaveContent(
+  updates: Record<string, string>,
+): Promise<Record<string, string>> {
+  const data = await request<{ content: Record<string, string> }>(
+    "/admin/content",
+    jsonInit("PUT", { updates }, adminHeaders()),
+  );
+  return data.content;
 }
 
 // ---------- Admin: orders ----------

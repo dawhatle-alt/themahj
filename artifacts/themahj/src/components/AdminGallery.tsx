@@ -12,12 +12,32 @@ import {
   adminListRegistrations, adminLogin, adminSquareDiagnostics, adminUpdateDiscountCode,
   adminUpdateEvent, adminUploadImage, adminUploadPhoto, getAdminToken, listGallery, setAdminToken,
   adminCreateCategory, adminDeleteCategory, adminListCategories, adminUpdateCategory,
+  adminGetContent, adminSaveContent,
 } from "@/lib/api";
 import {
   CATEGORY_COLORS, CATEGORY_COLOR_LABELS, REMINDER_OPTIONS,
   categoryMeta, colorMeta, fmtDate, fmtPrice, formatTimeRange,
 } from "@/lib/data";
 import { invalidateCategories, useCategories } from "@/lib/categories";
+import { CONTENT_DEFAULTS, invalidateContent } from "@/lib/content";
+
+// The About page's editable strings, in the order they appear on the page.
+// Labels describe where the text lands rather than naming the key, so the
+// client never has to think about "about.headingAccent".
+const CONTENT_FIELDS: { key: string; label: string; hint?: string; rows: number }[] = [
+  { key: "about.eyebrow", label: "Small label above the title", rows: 1 },
+  { key: "about.headingTop", label: "Big title — first line", rows: 1 },
+  { key: "about.headingAccent", label: "Big title — second line", hint: "Shown in italic rose.", rows: 1 },
+  { key: "about.lead", label: "Opening line", hint: "The large italic line above your bio.", rows: 2 },
+  {
+    key: "about.body", label: "Your bio",
+    hint: "Leave a blank line between paragraphs — each one becomes its own paragraph on the page.",
+    rows: 16,
+  },
+  { key: "about.closing", label: "Closing line", hint: "The gold sign-off under your bio.", rows: 3 },
+  { key: "about.quote", label: "Pull quote", hint: "The large quote in the band below your photo.", rows: 3 },
+  { key: "about.quoteAttribution", label: "Pull quote credit", rows: 1 },
+];
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -154,7 +174,7 @@ const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 const shortDateTime = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
-type Tab = "events" | "registrations" | "orders" | "discounts" | "categories" | "photos";
+type Tab = "events" | "registrations" | "orders" | "discounts" | "categories" | "photos" | "content";
 
 export function Admin() {
   const categories = useCategories();
@@ -176,6 +196,11 @@ export function Admin() {
   const [adminCategories, setAdminCategories] = useState<AdminCategory[]>([]);
   const [catDraft, setCatDraft] = useState({ name: "", color: "gold" });
   const [catEditing, setCatEditing] = useState<AdminCategory | null>(null);
+  // `content` is what's saved on the server; `contentDraft` is what's in the
+  // textareas. Keeping both is what makes "unsaved changes" detectable.
+  const [content, setContent] = useState<Record<string, string>>({});
+  const [contentDraft, setContentDraft] = useState<Record<string, string>>({});
+  const [contentSaving, setContentSaving] = useState(false);
 
   const [editing, setEditing] = useState<ApiEvent | null>(null);
   const [draft, setDraft] = useState<EventDraft>(emptyEvent());
@@ -213,6 +238,43 @@ export function Admin() {
     adminListCategories().then(setAdminCategories).catch(() => setAdminCategories([]));
     adminListDiscountCodes().then(setCodes).catch(() => setCodes([]));
     adminListRedemptions().then(setRedemptions).catch(() => setRedemptions([]));
+    adminGetContent()
+      .then(r => {
+        // Fill any key the database has no row for with the built-in default,
+        // so the textareas always show what the page is actually rendering.
+        const merged: Record<string, string> = {};
+        for (const f of CONTENT_FIELDS) merged[f.key] = r.content[f.key] ?? CONTENT_DEFAULTS[f.key] ?? "";
+        setContent(merged);
+        setContentDraft(merged);
+      })
+      .catch(() => { /* the Page Text tab shows defaults until this succeeds */ });
+  }
+
+  const contentDirty = CONTENT_FIELDS.some(f => (contentDraft[f.key] ?? "") !== (content[f.key] ?? ""));
+
+  async function saveContent() {
+    // Send only what changed — a full-object save would bump updatedAt on
+    // every field and make the audit trail useless.
+    const updates: Record<string, string> = {};
+    for (const f of CONTENT_FIELDS) {
+      if ((contentDraft[f.key] ?? "") !== (content[f.key] ?? "")) updates[f.key] = contentDraft[f.key] ?? "";
+    }
+    if (Object.keys(updates).length === 0) return;
+
+    setContentSaving(true);
+    try {
+      const saved = await adminSaveContent(updates);
+      const merged: Record<string, string> = {};
+      for (const f of CONTENT_FIELDS) merged[f.key] = saved[f.key] ?? CONTENT_DEFAULTS[f.key] ?? "";
+      setContent(merged);
+      setContentDraft(merged);
+      invalidateContent();  // so the live About page picks it up without a reload
+      setNotice("Page text saved — your About page is updated.");
+    } catch (err) {
+      fail(err, "Could not save the page text");
+    } finally {
+      setContentSaving(false);
+    }
   }
 
   useEffect(() => {
@@ -536,6 +598,7 @@ export function Admin() {
         {tabBtn("discounts", "Discount Codes")}
         {tabBtn("categories", "Categories")}
         {tabBtn("photos", "Photos")}
+        {tabBtn("content", contentDirty ? "Page Text •" : "Page Text")}
       </div>
 
       {/* EVENTS TAB */}
@@ -1248,6 +1311,76 @@ export function Admin() {
                   style={{ color: "var(--crak)" }} aria-label={`Delete ${p.caption ?? "photo"}`}>✕</button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* PAGE TEXT TAB */}
+      {tab === "content" && (
+        <div className="mt-8 max-w-3xl">
+          <div className="bg-white/70 border rounded-lg p-6" style={{ borderColor: "#E9DFD0" }}>
+            <h2 className="font-display text-2xl">About page text</h2>
+            <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
+              Edit the wording on your About page. Changes go live as soon as you save —
+              styling and layout stay the same, so you can't break the page.
+            </p>
+
+            <div className="space-y-5 mt-6">
+              {CONTENT_FIELDS.map(f => {
+                const changed = (contentDraft[f.key] ?? "") !== (content[f.key] ?? "");
+                return (
+                  <div key={f.key}>
+                    <label htmlFor={f.key} className="text-[11px] uppercase tracking-[0.12em] flex items-center gap-2"
+                      style={{ color: "var(--ink-soft)" }}>
+                      {f.label}
+                      {changed && <span style={{ color: "var(--crak)" }}>• unsaved</span>}
+                    </label>
+                    {f.rows === 1 ? (
+                      <input id={f.key} className={`${inputCls} mt-1.5`}
+                        value={contentDraft[f.key] ?? ""}
+                        onChange={e => setContentDraft({ ...contentDraft, [f.key]: e.target.value })} />
+                    ) : (
+                      <textarea id={f.key} rows={f.rows} className={`${inputCls} mt-1.5 leading-relaxed`}
+                        value={contentDraft[f.key] ?? ""}
+                        onChange={e => setContentDraft({ ...contentDraft, [f.key]: e.target.value })} />
+                    )}
+                    {f.hint && (
+                      <p className="text-[11px] mt-1" style={{ color: "var(--ink-soft)" }}>{f.hint}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3 mt-7 flex-wrap">
+              <button onClick={() => void saveContent()} disabled={!contentDirty || contentSaving}
+                className="btn-rose px-7 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] disabled:opacity-40 disabled:cursor-not-allowed">
+                {contentSaving ? "Saving…" : "Save changes"}
+              </button>
+              <button onClick={() => setContentDraft(content)} disabled={!contentDirty || contentSaving}
+                className="px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] border disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ borderColor: "#E9DFD0", color: "var(--ink-soft)" }}>
+                Discard changes
+              </button>
+              {/* Restores the copy the site shipped with — useful if an edit
+                  goes wrong and there's no earlier version to go back to. */}
+              <button
+                onClick={() => {
+                  const defaults: Record<string, string> = {};
+                  for (const f of CONTENT_FIELDS) defaults[f.key] = CONTENT_DEFAULTS[f.key] ?? "";
+                  setContentDraft(defaults);
+                }}
+                disabled={contentSaving}
+                className="text-[11px] uppercase tracking-[0.12em] underline underline-offset-4 disabled:opacity-40"
+                style={{ color: "var(--ink-soft)" }}>
+                Reset to original wording
+              </button>
+            </div>
+            {contentDirty && (
+              <p className="text-[11px] mt-3" style={{ color: "var(--crak)" }}>
+                You have unsaved changes.
+              </p>
+            )}
           </div>
         </div>
       )}

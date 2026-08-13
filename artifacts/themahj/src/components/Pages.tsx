@@ -3,6 +3,7 @@ import { TileFan, Tile } from "@/components/Tiles";
 import type { ApiEvent } from "@/lib/api";
 import { categoryMeta, fmtShort } from "@/lib/data";
 import { useCategories } from "@/lib/categories";
+import { useContent, toParagraphs } from "@/lib/content";
 import portrait from "@/assets/about/image1.jpeg";
 import tilesAction from "@/assets/about/image0.jpeg";
 
@@ -125,20 +126,23 @@ export function Home({ events, go }: { events: ApiEvent[]; go: (p: string) => vo
 
 // ---------------- ABOUT ----------------
 export function About({ go }: { go: (p: string) => void }) {
+  // Copy comes from the admin panel's Page Text tab, falling back to
+  // CONTENT_DEFAULTS so the page never renders blank while loading.
+  const c = useContent();
   return (
     <div>
       {/* ── Page header ── */}
       <div className="max-w-5xl mx-auto px-6 pt-16 pb-4">
         <motion.p className="eyebrow"
           variants={reveal} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          About me
+          {c("about.eyebrow")}
         </motion.p>
         <motion.h1
           className="font-display leading-[0.9] mt-4 tracking-tight"
           style={{ fontSize: "clamp(3rem,8vw,5.8rem)" }}
           variants={reveal} custom={0.08} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          The woman<br />
-          <span className="italic" style={{ color: "var(--rose-deep)" }}>behind the tiles.</span>
+          {c("about.headingTop")}<br />
+          <span className="italic" style={{ color: "var(--rose-deep)" }}>{c("about.headingAccent")}</span>
         </motion.h1>
         <motion.div className="hairline mt-10"
           initial={{ scaleX: 0, opacity: 0 }} whileInView={{ scaleX: 1, opacity: 1 }}
@@ -173,15 +177,10 @@ export function About({ go }: { go: (p: string) => void }) {
             <motion.p className="font-display italic text-[1.6rem] leading-snug"
               style={{ color: "var(--rose-deep)" }}
               variants={reveal} custom={0.1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-              Meet the face behind The Mahj Edit. ✨
+              {c("about.lead")}
             </motion.p>
 
-            {[
-              "I'm Rhonda, a mahjong enthusiast based in Georgetown, Texas. By day, I work in corporate leadership, but you'll often find me around a mahjong table with friends, family, and fellow enthusiasts.",
-              "What started as learning a new game quickly turned into a true passion. While I love the strategy and challenge of mahjong, what keeps me coming back are the friendships, laughter, and connections created around the table, along with the inevitable “Wait…whose turn is it?” moments that seem to happen in every game.",
-              "The Mahj Edit was born from that passion and a desire to create thoughtfully curated experiences where people can gather, play, learn, and connect. I'm also excited to be working toward bringing Troop Mahjong to Georgetown and creating even more opportunities for people to enjoy this incredible game together.",
-              "Whether you're a seasoned player or new to the game, I'm so glad you're here.",
-            ].map((text, i) => (
+            {toParagraphs(c("about.body")).map((text, i) => (
               <motion.p key={i}
                 variants={reveal} custom={0.18 + i * 0.08}
                 initial="hidden" whileInView="visible" viewport={{ once: true }}>
@@ -191,8 +190,7 @@ export function About({ go }: { go: (p: string) => void }) {
 
             <motion.p className="font-display italic text-xl pt-1" style={{ color: "var(--gold)" }}
               variants={reveal} custom={0.52} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-              Thank you for being here. I'm excited to grow this community with you,
-              one beautiful tile at a time. 🀄
+              {c("about.closing")}
             </motion.p>
 
             <motion.div variants={reveal} custom={0.58} initial="hidden" whileInView="visible" viewport={{ once: true }}>
@@ -214,11 +212,11 @@ export function About({ go }: { go: (p: string) => void }) {
             style={{ fontSize: "6rem", color: "var(--gold)", opacity: 0.35, lineHeight: 0.7 }}>"</p>
           <p className="font-display italic leading-[1.18] tracking-tight"
             style={{ fontSize: "clamp(1.6rem,3.5vw,2.6rem)", color: "var(--ink)" }}>
-            The best games are about more than winning — they're about connection, laughter, and creating moments worth remembering.
+            {c("about.quote")}
           </p>
           <div className="mt-10 flex items-center justify-center gap-5">
             <div className="hairline flex-1" style={{ maxWidth: 80 }} />
-            <p className="eyebrow">Rhonda &middot; The Mahj Edit</p>
+            <p className="eyebrow">{c("about.quoteAttribution")}</p>
             <div className="hairline flex-1" style={{ maxWidth: 80 }} />
           </div>
         </motion.div>
