@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Analytics } from "@vercel/analytics/react";
 import { Home, About, Troop } from "@/components/Pages";
 import { Events, PaymentConfirmation } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
@@ -231,6 +232,9 @@ export default function App() {
           </button>
         </div>
       </footer>
+
+      {/* ── Analytics ── */}
+      <Analytics />
 
     </div>
   );
