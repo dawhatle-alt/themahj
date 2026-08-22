@@ -32,23 +32,50 @@ import {
   adminSendPrivateEventPaymentLink,
 } from "@/lib/privateApi";
 
-// The About page's editable strings, in the order they appear on the page.
-// Labels describe where the text lands rather than naming the key, so the
-// client never has to think about "about.headingAccent".
-const CONTENT_FIELDS: { key: string; label: string; hint?: string; rows: number }[] = [
-  { key: "about.eyebrow", label: "Small label above the title", rows: 1 },
-  { key: "about.headingTop", label: "Big title — first line", rows: 1 },
-  { key: "about.headingAccent", label: "Big title — second line", hint: "Shown in italic rose.", rows: 1 },
-  { key: "about.lead", label: "Opening line", hint: "The large italic line above your bio.", rows: 2 },
+// Every editable string, in the order it appears on its page. Labels describe
+// where the text lands rather than naming the key, so the client never has to
+// think about "about.headingAccent".
+const CONTENT_FIELDS: { key: string; label: string; hint?: string; rows: number; group: string }[] = [
+  { group: "About page", key: "about.eyebrow", label: "Small label above the title", rows: 1 },
+  { group: "About page", key: "about.headingTop", label: "Big title - first line", rows: 1 },
+  { group: "About page", key: "about.headingAccent", label: "Big title - second line", hint: "Shown in italic rose.", rows: 1 },
+  { group: "About page", key: "about.lead", label: "Opening line", hint: "The large italic line above your bio.", rows: 2 },
   {
-    key: "about.body", label: "Your bio",
-    hint: "Leave a blank line between paragraphs — each one becomes its own paragraph on the page.",
+    group: "About page", key: "about.body", label: "Your bio",
+    hint: "Leave a blank line between paragraphs - each one becomes its own paragraph on the page.",
     rows: 16,
   },
-  { key: "about.closing", label: "Closing line", hint: "The gold sign-off under your bio.", rows: 3 },
-  { key: "about.quote", label: "Pull quote", hint: "The large quote in the band below your photo.", rows: 3 },
-  { key: "about.quoteAttribution", label: "Pull quote credit", rows: 1 },
+  { group: "About page", key: "about.closing", label: "Closing line", hint: "The gold sign-off under your bio.", rows: 3 },
+  { group: "About page", key: "about.quote", label: "Pull quote", hint: "The large quote in the band below your photo.", rows: 3 },
+  { group: "About page", key: "about.quoteAttribution", label: "Pull quote credit", rows: 1 },
+
+  { group: "Private events page", key: "privateEvents.eyebrow", label: "Small label above the title", rows: 1 },
+  { group: "Private events page", key: "privateEvents.headingTop", label: "Big title - first line", rows: 1 },
+  { group: "Private events page", key: "privateEvents.headingAccent", label: "Big title - second line", hint: "Shown in italic jade.", rows: 1 },
+  { group: "Private events page", key: "privateEvents.intro", label: "Opening paragraph", rows: 5 },
+  { group: "Private events page", key: "privateEvents.perfectForLabel", label: "Label above the occasion list", rows: 1 },
+  {
+    group: "Private events page", key: "privateEvents.perfectFor", label: "Perfect for",
+    hint: "One occasion per line. Each becomes its own pill on the page.",
+    rows: 9,
+  },
+  { group: "Private events page", key: "privateEvents.featuresHeading", label: "Heading above the four blocks", rows: 1 },
+  {
+    group: "Private events page", key: "privateEvents.features", label: "What makes an event special",
+    hint: "One block per paragraph, separated by a blank line. The FIRST line of each block is its heading; everything after it is the description. Add or remove blocks freely.",
+    rows: 16,
+  },
+  { group: "Private events page", key: "privateEvents.ctaHeading", label: "Closing panel heading", rows: 1 },
+  { group: "Private events page", key: "privateEvents.ctaBody", label: "Closing panel text", rows: 3 },
+  { group: "Private events page", key: "privateEvents.ctaButton", label: "Closing panel button", rows: 1 },
+
+  { group: "Private lessons page", key: "privateLessons.eyebrow", label: "Small label above the title", rows: 1 },
+  { group: "Private lessons page", key: "privateLessons.headingTop", label: "Big title - first line", rows: 1 },
+  { group: "Private lessons page", key: "privateLessons.headingAccent", label: "Big title - second line", hint: "Shown in italic rose.", rows: 1 },
+  { group: "Private lessons page", key: "privateLessons.intro", label: "Opening paragraph", rows: 4 },
 ];
+
+const CONTENT_GROUPS = ["About page", "Private events page", "Private lessons page"];
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -281,7 +308,7 @@ export function Admin() {
       setContent(merged);
       setContentDraft(merged);
       invalidateContent();  // so the live About page picks it up without a reload
-      setNotice("Page text saved — your About page is updated.");
+      setNotice("Page text saved — your site is updated.");
     } catch (err) {
       fail(err, "Could not save the page text");
     } finally {
@@ -1377,14 +1404,19 @@ export function Admin() {
       {tab === "content" && (
         <div className="mt-8 max-w-3xl">
           <div className="bg-white/70 border rounded-lg p-6" style={{ borderColor: "#E9DFD0" }}>
-            <h2 className="font-display text-2xl">About page text</h2>
+            <h2 className="font-display text-2xl">Page text</h2>
             <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
-              Edit the wording on your About page. Changes go live as soon as you save —
+              Edit the wording across your site. Changes go live as soon as you save —
               styling and layout stay the same, so you can't break the page.
             </p>
 
-            <div className="space-y-5 mt-6">
-              {CONTENT_FIELDS.map(f => {
+            {CONTENT_GROUPS.map(groupName => (
+            <div key={groupName} className="mt-8 first:mt-6">
+              <h3 className="font-display text-xl pb-2 border-b" style={{ borderColor: "#E9DFD0" }}>
+                {groupName}
+              </h3>
+            <div className="space-y-5 mt-5">
+              {CONTENT_FIELDS.filter(f => f.group === groupName).map(f => {
                 const changed = (contentDraft[f.key] ?? "") !== (content[f.key] ?? "");
                 return (
                   <div key={f.key}>
@@ -1409,8 +1441,10 @@ export function Admin() {
                 );
               })}
             </div>
+            </div>
+            ))}
 
-            <div className="flex items-center gap-3 mt-7 flex-wrap">
+            <div className="flex items-center gap-3 mt-9 flex-wrap">
               <button onClick={() => void saveContent()} disabled={!contentDirty || contentSaving}
                 className="btn-rose px-7 py-2.5 rounded-full text-xs uppercase tracking-[0.16em] disabled:opacity-40 disabled:cursor-not-allowed">
                 {contentSaving ? "Saving…" : "Save changes"}

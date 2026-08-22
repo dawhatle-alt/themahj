@@ -99,7 +99,9 @@ router.get("/private-events/packages", async (_req, res): Promise<void> => {
 });
 
 const RequestBody = z.object({
-  packageId: z.number().int().positive(),
+  // Optional: a guest can ask a general question before she has published
+  // any packages, or when none of them quite fit.
+  packageId: z.number().int().positive().nullable().optional(),
   name: z.string().trim().min(1).max(120),
   email: z.string().trim().email().max(200),
   phone: z.string().trim().max(40).optional().nullable(),
@@ -118,31 +120,41 @@ router.post("/private-events/request", async (req: Request, res: Response): Prom
   }
   const body = parsed.data;
 
-  const [pkg] = await db
-    .select()
-    .from(privateEventPackagesTable)
-    .where(eq(privateEventPackagesTable.id, body.packageId))
-    .limit(1);
+  // Enquiries without a package are first-class: "tell us about your event"
+  // has to work before anything is published, and not every guest knows which
+  // option they want. Those arrive unpriced for the owner to quote by hand.
+  let pkg: typeof privateEventPackagesTable.$inferSelect | null = null;
+  if (body.packageId) {
+    const [found] = await db
+      .select()
+      .from(privateEventPackagesTable)
+      .where(eq(privateEventPackagesTable.id, body.packageId))
+      .limit(1);
 
-  if (!pkg || !pkg.published) {
-    res.status(404).json({ error: "That package is no longer available." });
-    return;
+    if (!found || !found.published) {
+      res.status(404).json({ error: "That package is no longer available." });
+      return;
+    }
+    if (body.groupSize < found.minPeople || body.groupSize > found.maxPeople) {
+      res.status(400).json({
+        error: `${found.title} is for ${found.minPeople}–${found.maxPeople} people.`,
+      });
+      return;
+    }
+    pkg = found;
   }
-  if (body.groupSize < pkg.minPeople || body.groupSize > pkg.maxPeople) {
-    res.status(400).json({
-      error: `${pkg.title} is for ${pkg.minPeople}–${pkg.maxPeople} people.`,
-    });
-    return;
-  }
+
+  // Only a published, priced, non-approval package charges immediately.
+  const payNow = !!pkg && !pkg.requiresApproval && pkg.priceCents > 0;
 
   // Price and title are snapshotted: editing the package later must not
   // rewrite what this guest agreed to.
   const [booking] = await db
     .insert(privateEventBookingsTable)
     .values({
-      packageId: pkg.id,
-      packageTitle: pkg.title,
-      packagePriceCents: pkg.priceCents,
+      packageId: pkg?.id ?? null,
+      packageTitle: pkg?.title ?? "General enquiry",
+      packagePriceCents: pkg?.priceCents ?? 0,
       name: body.name,
       email: body.email,
       phone: body.phone ?? null,
@@ -151,12 +163,13 @@ router.post("/private-events/request", async (req: Request, res: Response): Prom
       venue: body.venue ?? null,
       preferredDates: body.preferredDates ?? null,
       notes: body.notes ?? null,
-      status: pkg.requiresApproval || pkg.priceCents <= 0 ? "requested" : "pending",
+      status: payNow ? "pending" : "requested",
     })
     .returning();
 
-  // Approval-first (or free): nothing is charged now.
-  if (pkg.requiresApproval || pkg.priceCents <= 0) {
+  // Enquiry, free, or approval-first: nothing is charged now. The `!pkg` arm
+  // also narrows the type for the checkout path below.
+  if (!payNow || !pkg) {
     await Promise.all([
       sendPrivateBookingRequestAck(emailBase(booking)),
       sendPrivateBookingOwnerNotification({

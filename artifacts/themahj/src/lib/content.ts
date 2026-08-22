@@ -3,11 +3,12 @@ import { getContent } from "./api";
 
 // Fallback copy, used when a key has no row yet or the request fails. The
 // database is seeded with these same strings, so in normal operation these are
-// never rendered — they exist so the About page still reads correctly if the
-// content request is slow, blocked, or the table is empty.
+// never rendered — they exist so a page still reads correctly if the content
+// request is slow, blocked, or the table is empty.
 //
 // Keep the keys in sync with EDITABLE_KEYS in the api-server's routes/content.ts.
 export const CONTENT_DEFAULTS: Record<string, string> = {
+  // ---- About page ----
   "about.eyebrow": "About me",
   "about.headingTop": "The woman",
   "about.headingAccent": "behind the tiles.",
@@ -23,10 +24,46 @@ export const CONTENT_DEFAULTS: Record<string, string> = {
   "about.quote":
     "The best games are about more than winning — they're about connection, laughter, and creating moments worth remembering.",
   "about.quoteAttribution": "Rhonda · The Mahj Edit",
+
+  // ---- Private events page ----
+  "privateEvents.eyebrow": "Private events",
+  "privateEvents.headingTop": "Private Mahjong Events,",
+  "privateEvents.headingAccent": "beautifully done.",
+  "privateEvents.intro":
+    "Turn your next gathering into a mahjong experience your guests will remember. The Mahj Edit brings the tablescape, the mahjong, and the details together for a stylish and effortless event — so you can enjoy your guests while we take care of the setup.",
+  "privateEvents.perfectForLabel": "Perfect for",
+  "privateEvents.perfectFor": [
+    "Birthdays",
+    "Girls’ Nights",
+    "Bridal Events",
+    "Neighborhood Gatherings",
+    "Corporate Events",
+    "Client Entertainment",
+    "Celebrations",
+    "Just Because",
+  ].join("\n"),
+  "privateEvents.featuresHeading": "What Makes a Mahj Edit Event Special",
+  "privateEvents.features": [
+    "Everything You Need\nWe bring the mats, tiles, racks, and game essentials needed for your event.",
+    "Beautifully Styled Tables\nThoughtfully coordinated mahjong setups make your event feel polished, elevated, and photo-worthy.",
+    "Customized for Your Event\nFrom an intimate gathering at home to a larger celebration, we tailor the setup to your group, space, and occasion.",
+    "You Enjoy the Party\nWe take care of the mahjong setup and details so you can spend your time enjoying your guests.",
+  ].join("\n\n"),
+  "privateEvents.ctaHeading": "Ready to Gather Around the Table?",
+  "privateEvents.ctaBody":
+    "Tell us a little about your event, and we’ll help create a mahjong experience designed for your group.",
+  "privateEvents.ctaButton": "Inquire about a private event",
+
+  // ---- Private lessons page ----
+  "privateLessons.eyebrow": "Learn at your own table",
+  "privateLessons.headingTop": "Private",
+  "privateLessons.headingAccent": "lessons.",
+  "privateLessons.intro":
+    "One-to-one or a small group, at your pace. Perfect for absolute beginners, or for players who want to sharpen up before joining open play.",
 };
 
-// Same module-level cache as lib/categories.ts: the About page and the admin
-// panel both read this, and it should cost one request per page load.
+// Same module-level cache as lib/categories.ts: several pages and the admin
+// panel read this, and it should cost one request per page load.
 let cache: Record<string, string> | null = null;
 let inflight: Promise<Record<string, string>> | null = null;
 const subscribers = new Set<(c: Record<string, string>) => void>();
@@ -83,5 +120,28 @@ export function toParagraphs(value: string): string[] {
   return value
     .split(/\n\s*\n/)
     .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Splits a "*.features" value into heading/body blocks. Blocks are separated by
+ * blank lines; within a block the first line is the heading and the rest is the
+ * body. One rule deeper than toParagraphs — it keeps the admin field a single
+ * textarea rather than four pairs of inputs.
+ */
+export function toBlocks(value: string): { title: string; body: string }[] {
+  return toParagraphs(value)
+    .map((block) => {
+      const [title, ...rest] = block.split("\n");
+      return { title: (title ?? "").trim(), body: rest.join(" ").trim() };
+    })
+    .filter((b) => b.title);
+}
+
+/** Splits a newline-separated list value, ignoring blank lines. */
+export function toLines(value: string): string[] {
+  return value
+    .split("\n")
+    .map((l) => l.trim())
     .filter(Boolean);
 }

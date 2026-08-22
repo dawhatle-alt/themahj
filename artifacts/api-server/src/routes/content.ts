@@ -20,6 +20,23 @@ export const EDITABLE_KEYS = [
   "about.closing",
   "about.quote",
   "about.quoteAttribution",
+
+  "privateEvents.eyebrow",
+  "privateEvents.headingTop",
+  "privateEvents.headingAccent",
+  "privateEvents.intro",
+  "privateEvents.perfectForLabel",
+  "privateEvents.perfectFor",
+  "privateEvents.featuresHeading",
+  "privateEvents.features",
+  "privateEvents.ctaHeading",
+  "privateEvents.ctaBody",
+  "privateEvents.ctaButton",
+
+  "privateLessons.eyebrow",
+  "privateLessons.headingTop",
+  "privateLessons.headingAccent",
+  "privateLessons.intro",
 ] as const;
 
 const KEY_SET: ReadonlySet<string> = new Set(EDITABLE_KEYS);

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { motion, type Variants } from "framer-motion";
+import { useContent, toBlocks, toLines } from "@/lib/content";
 import type { PrivatePackage, PrivateRequestResult } from "@/lib/privateApi";
 import {
   listPrivateLessonPackages, requestPrivateLesson, verifyPrivateLessonPayment,
@@ -46,9 +47,11 @@ function PrivateBookingPage(props: {
   headingAccent: string;
   intro: string;
   emptyMessage: string;
+  enquiryTitle: string;
+  enquiryBody: string;
   accent: string;
   loadPackages: () => Promise<PrivatePackage[]>;
-  submit: (pkg: PrivatePackage, common: CommonFields, extra: Record<string, string>) => Promise<PrivateRequestResult>;
+  submit: (pkg: PrivatePackage | null, common: CommonFields, extra: Record<string, string>) => Promise<PrivateRequestResult>;
   verify: (id: number) => Promise<string>;
   extraFields: (values: Record<string, string>, set: (k: string, v: string) => void) => ReactNode;
   /** Marketing copy shown above the booking section on the main view only —
@@ -58,6 +61,9 @@ function PrivateBookingPage(props: {
   const [packages, setPackages] = useState<PrivatePackage[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selected, setSelected] = useState<PrivatePackage | null>(null);
+  // Enquiring without picking a package. Set explicitly by the guest, or
+  // automatically when nothing is published yet so the form still works.
+  const [enquiring, setEnquiring] = useState(false);
   const [common, setCommon] = useState<CommonFields>({
     name: "", email: "", phone: "", groupSize: "", notes: "",
   });
@@ -72,8 +78,13 @@ function PrivateBookingPage(props: {
 
   useEffect(() => {
     props.loadPackages()
-      .then(setPackages)
-      .catch(() => setPackages([]))
+      .then(pkgs => {
+        setPackages(pkgs);
+        // With nothing published there is no option to pick, so open the
+        // enquiry form rather than showing a dead end.
+        if (pkgs.length === 0) setEnquiring(true);
+      })
+      .catch(() => { setPackages([]); setEnquiring(true); })
       .finally(() => setLoaded(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -108,15 +119,21 @@ function PrivateBookingPage(props: {
   const setExtraField = (k: string, v: string) => setExtra(prev => ({ ...prev, [k]: v }));
 
   async function onSubmit() {
-    if (!selected) return;
+    if (!selected && !enquiring) return;
     setError(null);
 
     if (!common.name.trim() || !common.email.trim()) {
       setError("Please add your name and email.");
       return;
     }
-    const size = parseInt(common.groupSize || String(selected.minPeople), 10);
-    if (Number.isNaN(size) || size < selected.minPeople || size > selected.maxPeople) {
+    const size = parseInt(common.groupSize || String(selected?.minPeople ?? 1), 10);
+    if (Number.isNaN(size) || size < 1) {
+      setError("How many people are you expecting?");
+      return;
+    }
+    // Group-size limits only apply to a chosen package; a general enquiry is
+    // exactly the case where the guest does not know the numbers yet.
+    if (selected && (size < selected.minPeople || size > selected.maxPeople)) {
       setError(`This is for ${selected.minPeople}–${selected.maxPeople} people.`);
       return;
     }
@@ -183,16 +200,15 @@ function PrivateBookingPage(props: {
         <p className="text-sm" style={{ color: "var(--ink-soft)" }}>Loading…</p>
       )}
 
-      {loaded && packages.length === 0 && (
-        <div className="bg-white/70 border rounded-lg p-8 max-w-xl" style={{ borderColor: "#E9DFD0" }}>
-          <p className="text-sm" style={{ color: "var(--ink-soft)" }}>{props.emptyMessage}</p>
-        </div>
-      )}
-
-      {loaded && packages.length > 0 && (
+      {loaded && (
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 items-start">
           {/* Packages */}
           <div className="space-y-4">
+            {packages.length === 0 && (
+              <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
+                {props.emptyMessage}
+              </p>
+            )}
             {packages.map((p, i) => {
               const active = selected?.id === p.id;
               return (
@@ -230,22 +246,46 @@ function PrivateBookingPage(props: {
                 </motion.button>
               );
             })}
+
+            {/* Always available: not everyone knows which option they want, and
+                a question should never be a dead end. */}
+            <motion.button
+              onClick={() => { setSelected(null); setEnquiring(true); setError(null); }}
+              className="w-full text-left bg-white/70 border rounded-lg p-6 tile-hover"
+              style={{
+                borderColor: enquiring && !selected ? props.accent : "#E9DFD0",
+                borderWidth: enquiring && !selected ? 2 : 1,
+                borderStyle: "dashed",
+              }}
+              aria-pressed={enquiring && !selected}
+              variants={reveal} custom={packages.length * 0.08}
+              initial="hidden" whileInView="visible" viewport={{ once: true }}
+            >
+              <h3 className="font-display text-2xl">{props.enquiryTitle}</h3>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
+                {props.enquiryBody}
+              </p>
+              <p className="mt-3 text-[11px] uppercase tracking-[0.12em]" style={{ color: props.accent }}>
+                Ask a question — nothing charged
+              </p>
+            </motion.button>
           </div>
 
           {/* Form */}
           <div className="bg-white/70 border rounded-lg p-6 lg:sticky lg:top-28" style={{ borderColor: "#E9DFD0" }}>
-            {!selected && (
+            {!selected && !enquiring && (
               <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
                 Choose an option to get started.
               </p>
             )}
 
-            {selected && (
+            {(selected || enquiring) && (
               <>
-                <h2 className="font-display text-2xl">{selected.title}</h2>
+                <h2 className="font-display text-2xl">{selected ? selected.title : "Tell us about it"}</h2>
                 <p className="text-xs uppercase tracking-[0.14em] mt-1" style={{ color: "var(--ink-soft)" }}>
-                  {selected.priceCents > 0 ? money(selected.priceCents) : "Price on enquiry"}
-                  {" · "}{duration(selected.durationMinutes)}
+                  {selected
+                    ? `${selected.priceCents > 0 ? money(selected.priceCents) : "Price on enquiry"} · ${duration(selected.durationMinutes)}`
+                    : "We'll reply with options and pricing"}
                 </p>
 
                 <div className="space-y-3 mt-5">
@@ -266,12 +306,14 @@ function PrivateBookingPage(props: {
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="pb-size" style={{ color: "var(--ink-soft)" }}>
-                      How many people ({selected.minPeople}–{selected.maxPeople})
+                      {selected
+                        ? `How many people (${selected.minPeople}–${selected.maxPeople})`
+                        : "Roughly how many people?"}
                     </label>
                     <input id="pb-size" type="number" inputMode="numeric"
-                      min={selected.minPeople} max={selected.maxPeople}
+                      min={selected?.minPeople ?? 1} max={selected?.maxPeople ?? 50}
                       className={`${inputCls} mt-1`}
-                      placeholder={String(selected.minPeople)}
+                      placeholder={String(selected?.minPeople ?? 4)}
                       value={common.groupSize}
                       onChange={e => setCommon({ ...common, groupSize: e.target.value })} />
                   </div>
@@ -293,13 +335,15 @@ function PrivateBookingPage(props: {
                   className="btn-rose w-full mt-5 px-7 py-3 rounded-full text-sm uppercase tracking-[0.18em] disabled:opacity-50">
                   {busy
                     ? "Sending…"
-                    : selected.requiresApproval || selected.priceCents <= 0
-                      ? "Send request"
-                      : `Book and pay ${money(selected.priceCents)}`}
+                    : !selected
+                      ? "Send enquiry"
+                      : selected.requiresApproval || selected.priceCents <= 0
+                        ? "Send request"
+                        : `Book and pay ${money(selected.priceCents)}`}
                 </button>
 
                 <p className="mt-3 text-[11px] leading-relaxed" style={{ color: "var(--ink-soft)" }}>
-                  {selected.requiresApproval || selected.priceCents <= 0
+                  {!selected || selected.requiresApproval || selected.priceCents <= 0
                     ? "This is an enquiry — nothing is charged now. We'll confirm availability by email first."
                     : "You'll be taken to Square to pay securely. We'll then agree a date by email."}
                 </p>
@@ -349,18 +393,21 @@ function Shell(props: {
 // ---------------- PRIVATE LESSONS ----------------
 
 export function PrivateLessons() {
+  const c = useContent();
   return (
     <PrivateBookingPage
-      eyebrow="Learn at your own table"
-      headingTop="Private"
-      headingAccent="lessons."
-      intro="One-to-one or a small group, at your pace. Perfect for absolute beginners, or for players who want to sharpen up before joining open play."
-      emptyMessage="Private lessons aren't bookable online just yet — get in touch and we'll sort something out."
+      eyebrow={c("privateLessons.eyebrow")}
+      headingTop={c("privateLessons.headingTop")}
+      headingAccent={c("privateLessons.headingAccent")}
+      intro={c("privateLessons.intro")}
+      emptyMessage="Lesson options aren't listed online just yet — tell us what you're after and we'll put something together."
+      enquiryTitle="Not sure which to pick?"
+      enquiryBody="Tell us who's learning and what you'd like to get out of it, and we'll suggest the right lesson and price."
       accent="var(--rose-deep)"
       loadPackages={listPrivateLessonPackages}
       verify={verifyPrivateLessonPayment}
       submit={(pkg, common, extra) => requestPrivateLesson({
-        packageId: pkg.id,
+        packageId: pkg?.id ?? null,
         name: common.name.trim(),
         email: common.email.trim(),
         phone: common.phone.trim() || null,
@@ -400,40 +447,15 @@ export function PrivateLessons() {
   );
 }
 
-// Client-supplied copy for the private events page. Kept as a component rather
-// than folded into the shell because only this page has it.
-const PERFECT_FOR = [
-  "Birthdays", "Girls’ Nights", "Bridal Events", "Neighborhood Gatherings",
-  "Corporate Events", "Client Entertainment", "Celebrations", "Just Because",
-];
-
-const WHAT_MAKES_SPECIAL = [
-  {
-    title: "Everything You Need",
-    body: "We bring the mats, tiles, racks, and game essentials needed for your event.",
-  },
-  {
-    title: "Beautifully Styled Tables",
-    body: "Thoughtfully coordinated mahjong setups make your event feel polished, elevated, and photo-worthy.",
-  },
-  {
-    title: "Customized for Your Event",
-    body: "From an intimate gathering at home to a larger celebration, we tailor the setup to your group, space, and occasion.",
-  },
-  {
-    title: "You Enjoy the Party",
-    body: "We take care of the mahjong setup and details so you can spend your time enjoying your guests.",
-  },
-];
-
 function PrivateEventsCopy() {
+  const c = useContent();
   return (
     <div className="mb-16">
       {/* Perfect for */}
       <motion.div variants={reveal} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        <p className="eyebrow">Perfect for</p>
+        <p className="eyebrow">{c("privateEvents.perfectForLabel")}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-2 mt-4">
-          {PERFECT_FOR.map(item => (
+          {toLines(c("privateEvents.perfectFor")).map(item => (
             <span key={item}
               className="text-sm px-4 py-1.5 rounded-full border"
               style={{ borderColor: "#E9DFD0", background: "rgba(255,255,255,0.6)", color: "var(--ink)" }}>
@@ -446,10 +468,10 @@ function PrivateEventsCopy() {
       {/* What makes it special */}
       <motion.h2 className="font-display text-3xl md:text-4xl mt-16"
         variants={reveal} custom={0.06} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        What Makes a Mahj Edit Event Special
+        {c("privateEvents.featuresHeading")}
       </motion.h2>
       <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8 mt-8">
-        {WHAT_MAKES_SPECIAL.map((item, i) => (
+        {toBlocks(c("privateEvents.features")).map((item, i) => (
           <motion.div key={item.title}
             variants={reveal} custom={0.1 + i * 0.08}
             initial="hidden" whileInView="visible" viewport={{ once: true }}>
@@ -465,14 +487,13 @@ function PrivateEventsCopy() {
       <motion.div className="mt-16 rounded-2xl px-8 py-12 text-center"
         style={{ background: "var(--ivory-deep)" }}
         variants={reveal} custom={0.1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        <h2 className="font-display text-3xl md:text-4xl">Ready to Gather Around the Table?</h2>
+        <h2 className="font-display text-3xl md:text-4xl">{c("privateEvents.ctaHeading")}</h2>
         <p className="mt-4 max-w-xl mx-auto text-[17px] leading-[1.7]" style={{ color: "var(--ink-soft)" }}>
-          Tell us a little about your event, and we&rsquo;ll help create a mahjong experience
-          designed for your group.
+          {c("privateEvents.ctaBody")}
         </p>
         <a href="#book"
           className="btn-jade inline-block mt-8 px-9 py-3.5 rounded-full text-sm uppercase tracking-[0.18em]">
-          Inquire about a private event
+          {c("privateEvents.ctaButton")}
         </a>
       </motion.div>
     </div>
@@ -482,19 +503,22 @@ function PrivateEventsCopy() {
 // ---------------- PRIVATE EVENTS ----------------
 
 export function PrivateEvents() {
+  const c = useContent();
   return (
     <PrivateBookingPage
-      eyebrow="Private events"
-      headingTop="Private Mahjong Events,"
-      headingAccent="beautifully done."
-      intro="Turn your next gathering into a mahjong experience your guests will remember. The Mahj Edit brings the tablescape, the mahjong, and the details together for a stylish and effortless event — so you can enjoy your guests while we take care of the setup."
+      eyebrow={c("privateEvents.eyebrow")}
+      headingTop={c("privateEvents.headingTop")}
+      headingAccent={c("privateEvents.headingAccent")}
+      intro={c("privateEvents.intro")}
       beforeBooking={<PrivateEventsCopy />}
-      emptyMessage="Private events aren't bookable online just yet — get in touch and we'll put something together."
+      emptyMessage="Packages aren't listed online just yet — tell us about your event and we'll build something around it."
+      enquiryTitle="Inquire about a private event"
+      enquiryBody="Tell us a little about your event, and we'll help create a mahjong experience designed for your group."
       accent="var(--jade)"
       loadPackages={listPrivateEventPackages}
       verify={verifyPrivateEventPayment}
       submit={(pkg, common, extra) => requestPrivateEvent({
-        packageId: pkg.id,
+        packageId: pkg?.id ?? null,
         name: common.name.trim(),
         email: common.email.trim(),
         phone: common.phone.trim() || null,

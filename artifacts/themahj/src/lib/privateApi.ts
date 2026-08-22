@@ -69,7 +69,8 @@ export interface PrivateBookingSummary {
 }
 
 export type PrivateLessonRequest = {
-  packageId: number;
+  /** null for a general enquiry — the guest has not picked a package. */
+  packageId: number | null;
   name: string;
   email: string;
   phone?: string | null;
@@ -81,7 +82,8 @@ export type PrivateLessonRequest = {
 };
 
 export type PrivateEventRequest = {
-  packageId: number;
+  /** null for a general enquiry — the guest has not picked a package. */
+  packageId: number | null;
   name: string;
   email: string;
   phone?: string | null;
