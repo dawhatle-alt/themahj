@@ -409,6 +409,10 @@ const BookingUpdate = z.object({
   status: z.enum([
     "requested", "awaiting_payment", "pending", "paid", "scheduled", "completed", "cancelled",
   ]).optional(),
+  // The agreed price for THIS booking. Seeded from the package when there
+  // was one, but a general enquiry arrives at zero for the owner to quote,
+  // so it has to be editable rather than a frozen snapshot.
+  packagePriceCents: z.number().int().min(0).optional(),
   scheduledDate: z.string().trim().max(40).optional().nullable(),
   scheduledTime: z.string().trim().max(60).optional().nullable(),
   scheduledLocation: z.string().trim().max(300).optional().nullable(),

@@ -109,6 +109,8 @@ export type PrivatePackageInput = {
 
 export type PrivateBookingUpdate = {
   status?: string;
+  /** The agreed price for this booking, in cents. */
+  packagePriceCents?: number;
   scheduledDate?: string | null;
   scheduledTime?: string | null;
   scheduledLocation?: string | null;

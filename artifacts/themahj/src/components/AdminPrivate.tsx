@@ -80,6 +80,9 @@ export function PrivateManager<B extends ManagedBooking>(props: {
   const [busy, setBusy] = useState(false);
   const [openBooking, setOpenBooking] = useState<number | null>(null);
   const [bookingDraft, setBookingDraft] = useState<PrivateBookingUpdate>({});
+  // Dollars as typed, converted on save — a number input fights decimals.
+  const [bookingPrice, setBookingPrice] = useState("0.00");
+  const [linkMessage, setLinkMessage] = useState("");
   const [view, setView] = useState<"bookings" | "packages">("bookings");
 
   const fail = (err: unknown, fallback: string) =>
@@ -154,6 +157,8 @@ export function PrivateManager<B extends ManagedBooking>(props: {
 
   function openFor(b: B) {
     setOpenBooking(openBooking === b.id ? null : b.id);
+    setBookingPrice((b.packagePriceCents / 100).toFixed(2));
+    setLinkMessage("");
     setBookingDraft({
       status: b.status,
       scheduledDate: b.scheduledDate ?? "",
@@ -163,10 +168,21 @@ export function PrivateManager<B extends ManagedBooking>(props: {
     });
   }
 
+  /** Dollars in the price box as whole cents, or null if it is not a number. */
+  function priceCents(): number | null {
+    const dollars = parseFloat(bookingPrice);
+    return Number.isNaN(dollars) || dollars < 0 ? null : Math.round(dollars * 100);
+  }
+
   async function saveBooking(b: B) {
+    const cents = priceCents();
+    if (cents === null) {
+      props.onError("Enter a price, or 0 if there is nothing to charge yet.");
+      return;
+    }
     setBusy(true);
     try {
-      await props.updateBooking(b.id, bookingDraft);
+      await props.updateBooking(b.id, { ...bookingDraft, packagePriceCents: cents });
       refresh();
       props.onNotice(
         bookingDraft.scheduledDate
@@ -182,23 +198,21 @@ export function PrivateManager<B extends ManagedBooking>(props: {
   }
 
   async function approveAndSend(b: B) {
-    const dollars = window.prompt(
-      `Amount to charge for "${b.packageTitle}" (dollars):`,
-      (b.packagePriceCents / 100).toFixed(2),
-    );
-    if (dollars === null) return;
-    const amountCents = Math.round(parseFloat(dollars) * 100);
-    if (Number.isNaN(amountCents) || amountCents <= 0) {
-      props.onError("Enter an amount above zero.");
+    const amountCents = priceCents();
+    if (amountCents === null || amountCents <= 0) {
+      props.onError("Set a price above zero before sending a payment link.");
       return;
     }
-    const message = window.prompt("Add a note to the email (optional):", "") ?? "";
 
     setBusy(true);
     try {
-      await props.sendPaymentLink(b.id, { amountCents, message: message || undefined });
+      // Persist the quote first, so the booking still shows what was asked for
+      // even if the guest never pays.
+      await props.updateBooking(b.id, { ...bookingDraft, packagePriceCents: amountCents });
+      await props.sendPaymentLink(b.id, { amountCents, message: linkMessage || undefined });
       refresh();
-      props.onNotice(`Payment link emailed to ${b.email}.`);
+      props.onNotice(`Payment link for ${money(amountCents)} emailed to ${b.email}.`);
+      setOpenBooking(null);
     } catch (err) {
       fail(err, "Could not send the payment link");
     } finally {
@@ -258,17 +272,12 @@ export function PrivateManager<B extends ManagedBooking>(props: {
                 </p>
               </div>
               <div className="flex gap-2 flex-wrap">
-                {!paid && (
-                  <button onClick={() => void approveAndSend(b)} disabled={busy}
-                    className="px-4 py-1.5 rounded-full text-xs border disabled:opacity-40"
-                    style={{ borderColor: "var(--jade)", color: "var(--jade)" }}>
-                    {b.paymentLinkUrl ? "Resend payment link" : "Approve & send link"}
-                  </button>
-                )}
                 <button onClick={() => openFor(b)}
                   className="px-4 py-1.5 rounded-full text-xs border"
-                  style={{ borderColor: "#E9DFD0", color: "var(--ink-soft)" }}>
-                  {open ? "Close" : "Manage"}
+                  style={paid || open
+                    ? { borderColor: "#E9DFD0", color: "var(--ink-soft)" }
+                    : { borderColor: "var(--jade)", color: "var(--jade)" }}>
+                  {open ? "Close" : paid ? "Manage" : "Set price & send link"}
                 </button>
               </div>
             </div>
@@ -287,7 +296,12 @@ export function PrivateManager<B extends ManagedBooking>(props: {
 
             {open && (
               <div className="mt-5 pt-5 border-t space-y-3" style={{ borderColor: "#E9DFD0" }}>
-                <div className="grid sm:grid-cols-3 gap-3">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className={labelCls} style={{ color: "var(--ink-soft)" }}>Price ($)</label>
+                    <input className={`${inputCls} mt-1`} inputMode="decimal" value={bookingPrice}
+                      onChange={e => setBookingPrice(e.target.value)} />
+                  </div>
                   <div>
                     <label className={labelCls} style={{ color: "var(--ink-soft)" }}>Status</label>
                     <select className={`${inputCls} mt-1`} value={bookingDraft.status ?? b.status}
@@ -320,7 +334,7 @@ export function PrivateManager<B extends ManagedBooking>(props: {
                 <p className="text-[11px]" style={{ color: "var(--ink-soft)" }}>
                   Setting a date emails the guest their confirmation. Changing it later sends an updated one.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button onClick={() => void saveBooking(b)} disabled={busy}
                     className="btn-rose px-6 py-2 rounded-full text-xs uppercase tracking-[0.14em] disabled:opacity-40">
                     Save
@@ -333,6 +347,28 @@ export function PrivateManager<B extends ManagedBooking>(props: {
                     </a>
                   )}
                 </div>
+
+                {/* Asking for money is a separate, deliberate step from saving
+                    notes — so it gets its own block and its own button. */}
+                {!paid && (
+                  <div className="mt-5 pt-5 border-t" style={{ borderColor: "#E9DFD0" }}>
+                    <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>
+                      Send a payment link
+                    </p>
+                    <textarea rows={2} className={`${inputCls} mt-2`}
+                      placeholder="Optional note to include in the email — e.g. what you agreed on the phone"
+                      value={linkMessage} onChange={e => setLinkMessage(e.target.value)} />
+                    <button onClick={() => void approveAndSend(b)} disabled={busy}
+                      className="mt-3 px-6 py-2 rounded-full text-xs uppercase tracking-[0.14em] border disabled:opacity-40"
+                      style={{ borderColor: "var(--jade)", color: "var(--jade)" }}>
+                      {b.paymentLinkUrl ? "Resend payment link" : "Send payment link"}
+                    </button>
+                    <p className="text-[11px] mt-2" style={{ color: "var(--ink-soft)" }}>
+                      Emails {b.email} a secure Square link for the price above, saves that
+                      price against the booking, and marks it awaiting payment.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
