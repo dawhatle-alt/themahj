@@ -55,8 +55,10 @@ function PrivateBookingPage(props: {
   verify: (id: number) => Promise<string>;
   extraFields: (values: Record<string, string>, set: (k: string, v: string) => void) => ReactNode;
   /** Marketing copy shown above the booking section on the main view only —
-      deliberately not on the confirmation screens. */
-  beforeBooking?: ReactNode;
+      deliberately not on the confirmation screens. Receives a callback so its
+      call-to-action can open the enquiry form rather than merely scrolling to
+      a form that has not been opened yet. */
+  beforeBooking?: (startEnquiry: () => void) => ReactNode;
 }) {
   const [packages, setPackages] = useState<PrivatePackage[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -115,6 +117,18 @@ function PrivateBookingPage(props: {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returned]);
+
+  /** Opens the general-enquiry form and brings it into view. */
+  function startEnquiry() {
+    setSelected(null);
+    setEnquiring(true);
+    setError(null);
+    // Defer so the form exists before we scroll to and focus it.
+    requestAnimationFrame(() => {
+      document.getElementById("pb-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("pb-name")?.focus({ preventScroll: true });
+    });
+  }
 
   const setExtraField = (k: string, v: string) => setExtra(prev => ({ ...prev, [k]: v }));
 
@@ -193,7 +207,7 @@ function PrivateBookingPage(props: {
 
   return (
     <Shell {...props}>
-      {props.beforeBooking}
+      {props.beforeBooking?.(startEnquiry)}
 
       <div id="book" className="scroll-mt-28">
       {!loaded && (
@@ -272,7 +286,7 @@ function PrivateBookingPage(props: {
           </div>
 
           {/* Form */}
-          <div className="bg-white/70 border rounded-lg p-6 lg:sticky lg:top-28" style={{ borderColor: "#E9DFD0" }}>
+          <div id="pb-form" className="bg-white/70 border rounded-lg p-6 scroll-mt-28 lg:sticky lg:top-28" style={{ borderColor: "#E9DFD0" }}>
             {!selected && !enquiring && (
               <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
                 Choose an option to get started.
@@ -447,7 +461,7 @@ export function PrivateLessons() {
   );
 }
 
-function PrivateEventsCopy() {
+function PrivateEventsCopy({ onInquire }: { onInquire: () => void }) {
   const c = useContent();
   return (
     <div className="mb-16">
@@ -491,10 +505,10 @@ function PrivateEventsCopy() {
         <p className="mt-4 max-w-xl mx-auto text-[17px] leading-[1.7]" style={{ color: "var(--ink-soft)" }}>
           {c("privateEvents.ctaBody")}
         </p>
-        <a href="#book"
+        <button type="button" onClick={onInquire}
           className="btn-jade inline-block mt-8 px-9 py-3.5 rounded-full text-sm uppercase tracking-[0.18em]">
           {c("privateEvents.ctaButton")}
-        </a>
+        </button>
       </motion.div>
     </div>
   );
@@ -510,7 +524,7 @@ export function PrivateEvents() {
       headingTop={c("privateEvents.headingTop")}
       headingAccent={c("privateEvents.headingAccent")}
       intro={c("privateEvents.intro")}
-      beforeBooking={<PrivateEventsCopy />}
+      beforeBooking={startEnquiry => <PrivateEventsCopy onInquire={startEnquiry} />}
       emptyMessage="Packages aren't listed online just yet — tell us about your event and we'll build something around it."
       enquiryTitle="Inquire about a private event"
       enquiryBody="Tell us a little about your event, and we'll help create a mahjong experience designed for your group."
