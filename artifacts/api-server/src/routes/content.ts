@@ -37,6 +37,8 @@ export const EDITABLE_KEYS = [
   "privateLessons.headingTop",
   "privateLessons.headingAccent",
   "privateLessons.intro",
+
+  "contact.email",
 ] as const;
 
 const KEY_SET: ReadonlySet<string> = new Set(EDITABLE_KEYS);

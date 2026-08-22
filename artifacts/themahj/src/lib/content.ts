@@ -60,6 +60,12 @@ export const CONTENT_DEFAULTS: Record<string, string> = {
   "privateLessons.headingAccent": "lessons.",
   "privateLessons.intro":
     "One-to-one or a small group, at your pace. Perfect for absolute beginners, or for players who want to sharpen up before joining open play.",
+
+  // ---- Shown on the site ----
+  // The address guests are told to write to. Separate from OWNER_EMAIL, which
+  // is the reply-to on outgoing mail and is set in Vercel; keep them the same
+  // unless there is a reason not to.
+  "contact.email": "themahjeditco@gmail.com",
 };
 
 // Same module-level cache as lib/categories.ts: several pages and the admin

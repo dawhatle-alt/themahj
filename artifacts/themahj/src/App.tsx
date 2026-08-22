@@ -7,6 +7,7 @@ import { Gallery, Admin } from "@/components/AdminGallery";
 import type { ApiEvent } from "@/lib/api";
 import { listEvents } from "@/lib/api";
 import logoGold from "@/assets/logo-gold.png";
+import { useContent } from "@/lib/content";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -78,6 +79,8 @@ function pendingConfirmationId(): number | null {
 }
 
 export default function App() {
+  const c = useContent();
+  const contactEmail = c("contact.email");
   // A Square return lands on /?confirmation=<id> and must show the events page
   // regardless of the path it came back to; otherwise the URL decides.
   const [page, setPage] = useState<string>(() =>
@@ -271,7 +274,7 @@ export default function App() {
 
           <div className="text-sm leading-relaxed" style={{ color: "#8A7260" }}>
             <p>Georgetown, Texas</p>
-            <p>hello@themahjeditco.com</p>
+            <p><a href={`mailto:${contactEmail}`} className="underline">{contactEmail}</a></p>
             <p className="mt-2 text-xs" style={{ color: "#5C4A3A" }}>
               © {new Date().getFullYear()} The Mahj Edit. All rights reserved.
             </p>

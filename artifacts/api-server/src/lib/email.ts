@@ -3,7 +3,7 @@ import { logger } from "./logger";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 export const FROM_EMAIL = process.env.EMAIL_FROM ?? process.env.FROM_EMAIL ?? "noreply@themahjeditco.com";
-export const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@themahjeditco.com";
+export const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "themahjeditco@gmail.com";
 
 export const WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN ?? "https://themahjeditco.com").replace(/\/$/, "");
 const LOGO_URL = `${WEB_ORIGIN}/logo-gold.png`;

@@ -25,8 +25,9 @@ Reference for values and behaviour: [../README.md](../README.md).
       `www.themahjeditco.com`, and copy the records Vercel displays
 - [ ] Confirm the Vercel **Root Directory** setting is empty (repo root), not
       `artifacts/themahj`
-- [ ] Decide whether `hello@themahjeditco.com` will be a real mailbox; if not, get
-      the address the client actually reads
+- [ ] Confirm the address the client actually reads. There is no MX on the apex,
+      so `hello@themahjeditco.com` is NOT a mailbox — mail to it bounces. As of
+      2026-08-22 the client uses `themahjeditco@gmail.com`
 
 ---
 
@@ -169,7 +170,9 @@ To add or confirm:
 - [ ] `PUBLIC_WEB_ORIGIN` — `https://themahjeditco.com` (used for the Square return
       redirect and email links; wrong value sends buyers to the wrong host)
 - [ ] `EMAIL_FROM` — `noreply@themahjeditco.com`
-- [ ] `OWNER_EMAIL` — the reply-to address the client actually reads
+- [ ] `OWNER_EMAIL` — `themahjeditco@gmail.com`. Reply-to on guest mail and the
+      destination for booking alerts. **Never set `EMAIL_FROM` to a gmail address**:
+      Resend can only sign for the verified domain, so it would fail DMARC
 - [ ] `SQUARE_ACCESS_TOKEN`
 - [ ] `SQUARE_LOCATION_ID`
 - [ ] `SQUARE_ENVIRONMENT` — `production` (anything else is treated as sandbox)

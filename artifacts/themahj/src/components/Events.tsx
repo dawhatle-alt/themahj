@@ -5,6 +5,7 @@ import type { ApiEvent, ApiRegistration } from "@/lib/api";
 import { checkout, getConfirmation, registerFree, verifyPayment } from "@/lib/api";
 import { categoryMeta, colorMeta, fmtDate, fmtPrice } from "@/lib/data";
 import { useCategories } from "@/lib/categories";
+import { useContent } from "@/lib/content";
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -24,6 +25,7 @@ export function Events({ events, loadError, onRegistered }: {
   onRegistered: () => void;
 }) {
   const categories = useCategories();
+  const contactEmail = useContent()("contact.email");
   const today = new Date();
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState<ApiEvent | null>(null);
@@ -185,7 +187,7 @@ export function Events({ events, loadError, onRegistered }: {
                   <p className="font-display italic text-2xl">We couldn't load the calendar</p>
                   <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
                     Something went wrong on our end — please refresh, or email{" "}
-                    <a className="underline" href="mailto:hello@themahjeditco.com">hello@themahjeditco.com</a>{" "}
+                    <a className="underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>{" "}
                     and we'll get you a seat.
                   </p>
                 </>

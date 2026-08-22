@@ -105,8 +105,8 @@ pnpm run dev:web   # Vite on :5000, proxies /api → :3001
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Dashboard → Settings → API keys (needed for photo uploads) |
 | `ADMIN_TOKEN` | ✅ | The admin panel passcode — pick a strong one |
 | `RESEND_API_KEY` | ✅ for emails | Verify the `themahjeditco.com` domain in Resend first |
-| `EMAIL_FROM` | optional | Defaults to `noreply@themahjeditco.com` |
-| `OWNER_EMAIL` | optional | Reply-to address; defaults to `hello@themahjeditco.com` |
+| `EMAIL_FROM` | optional | Defaults to `noreply@themahjeditco.com`. **Must stay on the Resend-verified domain** — a gmail.com from-address fails DKIM/DMARC and gets spam-foldered |
+| `OWNER_EMAIL` | ✅ | Reply-to on guest mail **and** where booking alerts are sent. Defaults to `themahjeditco@gmail.com` |
 | `PUBLIC_WEB_ORIGIN` | ✅ in prod | `https://themahjeditco.com` |
 | `SQUARE_ACCESS_TOKEN` | ✅ for paid events | Square Developer Dashboard → the new production app |
 | `SQUARE_LOCATION_ID` | ✅ for paid events | Square Dashboard → Locations |

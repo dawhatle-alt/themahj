@@ -73,9 +73,15 @@ const CONTENT_FIELDS: { key: string; label: string; hint?: string; rows: number;
   { group: "Private lessons page", key: "privateLessons.headingTop", label: "Big title - first line", rows: 1 },
   { group: "Private lessons page", key: "privateLessons.headingAccent", label: "Big title - second line", hint: "Shown in italic rose.", rows: 1 },
   { group: "Private lessons page", key: "privateLessons.intro", label: "Opening paragraph", rows: 4 },
+
+  {
+    group: "Contact", key: "contact.email", label: "Email address shown on the site",
+    hint: "Appears in the footer and wherever guests are asked to get in touch. This is only what is displayed - the reply-to on emails you send is OWNER_EMAIL in the hosting settings.",
+    rows: 1,
+  },
 ];
 
-const CONTENT_GROUPS = ["About page", "Private events page", "Private lessons page"];
+const CONTENT_GROUPS = ["About page", "Private events page", "Private lessons page", "Contact"];
 
 const reveal: Variants = {
   hidden: { opacity: 0, y: 24 },
