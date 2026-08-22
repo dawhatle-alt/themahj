@@ -51,6 +51,9 @@ function PrivateBookingPage(props: {
   submit: (pkg: PrivatePackage, common: CommonFields, extra: Record<string, string>) => Promise<PrivateRequestResult>;
   verify: (id: number) => Promise<string>;
   extraFields: (values: Record<string, string>, set: (k: string, v: string) => void) => ReactNode;
+  /** Marketing copy shown above the booking section on the main view only —
+      deliberately not on the confirmation screens. */
+  beforeBooking?: ReactNode;
 }) {
   const [packages, setPackages] = useState<PrivatePackage[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -173,6 +176,9 @@ function PrivateBookingPage(props: {
 
   return (
     <Shell {...props}>
+      {props.beforeBooking}
+
+      <div id="book" className="scroll-mt-28">
       {!loaded && (
         <p className="text-sm" style={{ color: "var(--ink-soft)" }}>Loading…</p>
       )}
@@ -302,6 +308,7 @@ function PrivateBookingPage(props: {
           </div>
         </div>
       )}
+      </div>
     </Shell>
   );
 }
@@ -393,15 +400,95 @@ export function PrivateLessons() {
   );
 }
 
+// Client-supplied copy for the private events page. Kept as a component rather
+// than folded into the shell because only this page has it.
+const PERFECT_FOR = [
+  "Birthdays", "Girls’ Nights", "Bridal Events", "Neighborhood Gatherings",
+  "Corporate Events", "Client Entertainment", "Celebrations", "Just Because",
+];
+
+const WHAT_MAKES_SPECIAL = [
+  {
+    title: "Everything You Need",
+    body: "We bring the mats, tiles, racks, and game essentials needed for your event.",
+  },
+  {
+    title: "Beautifully Styled Tables",
+    body: "Thoughtfully coordinated mahjong setups make your event feel polished, elevated, and photo-worthy.",
+  },
+  {
+    title: "Customized for Your Event",
+    body: "From an intimate gathering at home to a larger celebration, we tailor the setup to your group, space, and occasion.",
+  },
+  {
+    title: "You Enjoy the Party",
+    body: "We take care of the mahjong setup and details so you can spend your time enjoying your guests.",
+  },
+];
+
+function PrivateEventsCopy() {
+  return (
+    <div className="mb-16">
+      {/* Perfect for */}
+      <motion.div variants={reveal} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+        <p className="eyebrow">Perfect for</p>
+        <div className="flex flex-wrap gap-x-3 gap-y-2 mt-4">
+          {PERFECT_FOR.map(item => (
+            <span key={item}
+              className="text-sm px-4 py-1.5 rounded-full border"
+              style={{ borderColor: "#E9DFD0", background: "rgba(255,255,255,0.6)", color: "var(--ink)" }}>
+              {item}
+            </span>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* What makes it special */}
+      <motion.h2 className="font-display text-3xl md:text-4xl mt-16"
+        variants={reveal} custom={0.06} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+        What Makes a Mahj Edit Event Special
+      </motion.h2>
+      <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8 mt-8">
+        {WHAT_MAKES_SPECIAL.map((item, i) => (
+          <motion.div key={item.title}
+            variants={reveal} custom={0.1 + i * 0.08}
+            initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <h3 className="font-display text-2xl" style={{ color: "var(--jade)" }}>{item.title}</h3>
+            <p className="mt-2 text-[17px] leading-[1.7]" style={{ color: "var(--ink-soft)" }}>
+              {item.body}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Call to action into the booking form below */}
+      <motion.div className="mt-16 rounded-2xl px-8 py-12 text-center"
+        style={{ background: "var(--ivory-deep)" }}
+        variants={reveal} custom={0.1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+        <h2 className="font-display text-3xl md:text-4xl">Ready to Gather Around the Table?</h2>
+        <p className="mt-4 max-w-xl mx-auto text-[17px] leading-[1.7]" style={{ color: "var(--ink-soft)" }}>
+          Tell us a little about your event, and we&rsquo;ll help create a mahjong experience
+          designed for your group.
+        </p>
+        <a href="#book"
+          className="btn-jade inline-block mt-8 px-9 py-3.5 rounded-full text-sm uppercase tracking-[0.18em]">
+          Inquire about a private event
+        </a>
+      </motion.div>
+    </div>
+  );
+}
+
 // ---------------- PRIVATE EVENTS ----------------
 
 export function PrivateEvents() {
   return (
     <PrivateBookingPage
-      eyebrow="Bring the table to you"
-      headingTop="Private"
-      headingAccent="events."
-      intro="Birthdays, showers, team gatherings, or a night in with friends. We bring the tiles, the tables, and the teaching — you bring the people."
+      eyebrow="Private events"
+      headingTop="Private Mahjong Events,"
+      headingAccent="beautifully done."
+      intro="Turn your next gathering into a mahjong experience your guests will remember. The Mahj Edit brings the tablescape, the mahjong, and the details together for a stylish and effortless event — so you can enjoy your guests while we take care of the setup."
+      beforeBooking={<PrivateEventsCopy />}
       emptyMessage="Private events aren't bookable online just yet — get in touch and we'll put something together."
       accent="var(--jade)"
       loadPackages={listPrivateEventPackages}
