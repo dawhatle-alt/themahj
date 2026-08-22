@@ -39,7 +39,7 @@ export function parsePrivateReference(
 }
 
 /** Statuses that mean money has already been recorded against a booking. */
-const PAID_STATUSES = new Set(["paid", "scheduled", "completed"]);
+export const PAID_STATUSES = new Set(["paid", "scheduled", "completed"]);
 
 interface ConfirmOpts {
   paymentId?: string | null;

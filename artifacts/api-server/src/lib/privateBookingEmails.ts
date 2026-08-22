@@ -174,32 +174,67 @@ export async function sendPrivateBookingPaymentLinkEmail(
   if (error) logger.error({ error }, "Failed to send private booking payment link");
 }
 
-/** Sent once the owner sets the agreed date. */
+/**
+ * Sent once the owner sets the agreed date.
+ *
+ * Splits on whether money is still outstanding: an unpaid booking must not be
+ * told it is "confirmed", or a guest can believe they have a seat they never
+ * paid for. When something is due, this doubles as the payment request so the
+ * date and the link arrive together rather than in two emails.
+ */
 export async function sendPrivateBookingScheduledEmail(
   opts: PrivateBookingEmailBase & {
     scheduledDate: string;
     scheduledTime?: string | null;
     scheduledLocation?: string | null;
+    amountDueCents?: number | null;
+    paymentUrl?: string | null;
   },
 ): Promise<void> {
   const client = getClient();
   if (!client) return;
 
-  const { error } = await client.emails.send({
-    from: FROM_EMAIL,
-    to: [opts.email],
-    replyTo: CONTACT_EMAIL,
-    subject: `Confirmed: your ${opts.kindLabel} on ${opts.scheduledDate}`,
-    html: `${logoHeader}
-      <h2>It is in the diary</h2>
-      <p>Hi ${esc(opts.name)},</p>
-      <p>Your <strong>${esc(opts.packageTitle)}</strong> is confirmed.</p>
+  const due = opts.amountDueCents ?? 0;
+  const awaitingPayment = due > 0;
+
+  const whenWhere = `
       <table style="border-collapse:collapse;margin:16px 0">
         ${detailRow("Date", opts.scheduledDate)}
         ${detailRow("Time", opts.scheduledTime)}
         ${detailRow("Where", opts.scheduledLocation)}
         ${detailRow("Group size", String(opts.groupSize))}
-      </table>
+      </table>`;
+
+  const paymentBlock = awaitingPayment && opts.paymentUrl
+    ? `
+      <p>To confirm it, please complete payment of <strong>${money(due)}</strong>
+      using the secure link below.</p>
+      <p style="margin:24px 0">
+        <a href="${opts.paymentUrl}"
+           style="background:#B98A4A;color:#ffffff;padding:12px 28px;border-radius:999px;text-decoration:none;display:inline-block">
+          Pay ${money(due)} securely
+        </a>
+      </p>
+      <p style="color:#666;font-size:13px">If the button does not work, paste this into your browser:<br/>${esc(opts.paymentUrl)}</p>`
+    : awaitingPayment
+      ? `<p>There is <strong>${money(due)}</strong> outstanding — we will follow up with a payment link shortly.</p>`
+      : "";
+
+  const { error } = await client.emails.send({
+    from: FROM_EMAIL,
+    to: [opts.email],
+    replyTo: CONTACT_EMAIL,
+    subject: awaitingPayment
+      ? `Your ${opts.kindLabel} on ${opts.scheduledDate} - payment to confirm`
+      : `Confirmed: your ${opts.kindLabel} on ${opts.scheduledDate}`,
+    html: `${logoHeader}
+      <h2>${awaitingPayment ? "We have held your date" : "It is in the diary"}</h2>
+      <p>Hi ${esc(opts.name)},</p>
+      <p>${awaitingPayment
+        ? `We have pencilled in your <strong>${esc(opts.packageTitle)}</strong>.`
+        : `Your <strong>${esc(opts.packageTitle)}</strong> is confirmed.`}</p>
+      ${whenWhere}
+      ${paymentBlock}
       <p>If anything changes, just reply to this email.</p>
       <p style="margin-top:24px">See you at the table,<br/>The Mahj Edit</p>`,
   });

@@ -8,6 +8,7 @@ import { getSquareClient, orderTotalCents, isSquareConfigError } from "../lib/sq
 import {
   eventReference,
   createPrivatePaymentLink,
+  PAID_STATUSES,
   confirmPrivateEventBooking,
 } from "../lib/privateBookings";
 import {
@@ -75,7 +76,9 @@ const emailBase = (b: typeof privateEventBookingsTable.$inferSelect) => ({
   bookingId: b.id,
   name: b.name,
   email: b.email,
-  packageTitle: b.packageTitle,
+  // "General enquiry" is how a package-less booking is stored; it reads
+  // badly in a sentence, so customers see the kind instead.
+  packageTitle: b.packageTitle === "General enquiry" ? "Private event" : b.packageTitle,
   groupSize: b.groupSize,
   details: eventDetails(b),
 });
@@ -456,17 +459,56 @@ router.put("/admin/private-events/bookings/:id", requireAdmin, async (req, res):
     .where(eq(privateEventBookingsTable.id, id))
     .returning();
 
-  // Setting a date is what tells the guest it is really happening.
+  // Setting a date is what tells the guest it is really happening — but an
+  // unpaid booking must not be told it is "confirmed", or someone believes they
+  // hold a place they never paid for. When money is still due the date and the
+  // payment link go out together rather than as two separate emails.
   if (row.scheduledDate && !row.scheduledEmailSentAt && row.status !== "cancelled") {
+    const alreadyPaid = PAID_STATUSES.has(row.status);
+    const amountDue = alreadyPaid ? 0 : row.packagePriceCents;
+    let paymentUrl = row.paymentLinkUrl;
+
+    if (amountDue > 0 && !paymentUrl) {
+      try {
+        const origin = getOrigin(req);
+        const created = await createPrivatePaymentLink({
+          reference: eventReference(row.id),
+          title: row.packageTitle,
+          amountCents: amountDue,
+          buyerEmail: row.email,
+          redirectUrl: `${origin}/private-events?booking=${row.id}`,
+        });
+        paymentUrl = created.url;
+        await db
+          .update(privateEventBookingsTable)
+          .set({
+            paymentSessionId: created.paymentLinkId,
+            paymentLinkUrl: created.url,
+            paymentLinkSentAt: new Date(),
+          })
+          .where(eq(privateEventBookingsTable.id, id));
+      } catch (err) {
+        // Still send the date — the email says a link will follow rather than
+        // pretending nothing is owed.
+        logger.error({ err, bookingId: id }, "Could not create a payment link for the scheduled email");
+      }
+    }
+
     await sendPrivateBookingScheduledEmail({
       ...emailBase(row),
       scheduledDate: row.scheduledDate,
       scheduledTime: row.scheduledTime,
       scheduledLocation: row.scheduledLocation,
+      amountDueCents: amountDue,
+      paymentUrl,
     });
+
     await db
       .update(privateEventBookingsTable)
-      .set({ scheduledEmailSentAt: new Date(), status: row.status === "paid" ? "scheduled" : row.status })
+      .set({
+        scheduledEmailSentAt: new Date(),
+        status: alreadyPaid ? "scheduled" : amountDue > 0 ? "awaiting_payment" : row.status,
+      })
       .where(eq(privateEventBookingsTable.id, id));
   }
 
