@@ -33,6 +33,38 @@ pnpm monorepo, deployed on Vercel:
   lands; hour-scale lead times need a Pro plan and a more frequent schedule.
 - **Admin**: passcode login (checked against `ADMIN_TOKEN`), event CRUD, signups table, per-event check-in CSV, photo gallery uploads to Supabase Storage.
 
+## Private lessons and private events
+
+Two separate systems — own tables, own routes, own admin tab — because the two
+are sold differently and are expected to diverge (events carry an occasion and
+a venue, lessons a skill level). Each sells **packages**; each package chooses
+how it takes money via `requires_approval`:
+
+- **off** — the guest pays at Square immediately (lessons default here)
+- **on** — the request arrives unpaid, the owner approves it and the panel emails
+  a Square payment link (events default here; a party needs a conversation first)
+
+Statuses: `pending → paid → scheduled → completed` for pay-now, and
+`requested → awaiting_payment → paid → scheduled → completed` for approval.
+Only `paid`/`scheduled`/`completed` mean money arrived.
+
+**The Square reference namespace is the one thing genuinely shared.**
+`referenceId` is account-wide and the events webhook reads a bare integer as a
+registration id, so private bookings are prefixed — `plesson-12`, `pevent-4` —
+and the webhook dispatches on the prefix (`lib/privateBookings.ts`). Change that
+scheme and a private payment will silently confirm an unrelated registration.
+
+Other invariants worth keeping:
+
+- Bookings **snapshot** `package_title`/`package_price_cents` and hold a nullable
+  `package_id`, so retiring an offering never rewrites or orphans paid history.
+- Confirmation is **idempotent** — reachable from both the webhook and the return
+  page's polling fallback, it only mails on the first transition into a paid
+  status.
+- **Setting a date is what emails the guest.** `scheduled_email_sent_at` clears
+  when the date changes, so a genuine reschedule re-notifies but a double-save
+  does not.
+
 ## Editable page copy
 
 The About page's wording is owner-editable from the admin panel's **Page Text**
