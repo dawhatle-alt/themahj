@@ -2,20 +2,20 @@ import { Resend } from "resend";
 import { logger } from "./logger";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.EMAIL_FROM ?? process.env.FROM_EMAIL ?? "noreply@themahjeditco.com";
-const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@themahjeditco.com";
+export const FROM_EMAIL = process.env.EMAIL_FROM ?? process.env.FROM_EMAIL ?? "noreply@themahjeditco.com";
+export const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "hello@themahjeditco.com";
 
-const WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN ?? "https://themahjeditco.com").replace(/\/$/, "");
+export const WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN ?? "https://themahjeditco.com").replace(/\/$/, "");
 const LOGO_URL = `${WEB_ORIGIN}/logo-gold.png`;
 
 // Branded header for customer-facing emails. Uses the width attribute (respected
 // by most email clients) alongside inline styles, since email CSS support is spotty.
-const logoHeader = `
+export const logoHeader = `
       <div style="text-align:center;padding:8px 0 16px">
         <img src="${LOGO_URL}" alt="The Mahj Edit" width="180" style="width:180px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none" />
       </div>`;
 
-function getClient(): Resend | null {
+export function getClient(): Resend | null {
   if (!RESEND_API_KEY) {
     logger.warn("RESEND_API_KEY is not set — email delivery is disabled");
     return null;

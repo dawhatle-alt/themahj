@@ -8,6 +8,7 @@ import {
   squareErrorDetails, isSquareConfigError, orderTotalCents,
 } from "../lib/square";
 import { resolveDiscount, hasRedeemed, recordPendingRedemption, markRedemptionPaid } from "../lib/discounts";
+import { parsePrivateReference, confirmPrivateBooking } from "../lib/privateBookings";
 import { z } from "zod";
 import { RegistrationBody } from "./registrations";
 
@@ -409,7 +410,17 @@ router.post(
         const orderRes = await client.orders.get({ orderId: payment.order_id });
         const referenceId = orderRes.order?.referenceId;
 
-        if (referenceId) {
+        // One referenceId namespace serves three flows. Private bookings are
+        // prefixed ("plesson-12"), so a bare integer is — and must stay — an
+        // event registration id.
+        const privateRef = parsePrivateReference(referenceId);
+        if (privateRef) {
+          await confirmPrivateBooking(privateRef, {
+            paymentId: payment.id ?? null,
+            orderId: payment.order_id,
+            amountPaidCents: orderTotalCents(orderRes.order),
+          });
+        } else if (referenceId) {
           const registrationId = parseInt(referenceId, 10);
           if (!Number.isNaN(registrationId)) {
             await confirmRegistration(

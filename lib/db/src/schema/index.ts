@@ -5,3 +5,5 @@ export * from "./event_gallery";
 export * from "./discount_codes";
 export * from "./discount_redemptions";
 export * from "./site_content";
+export * from "./private_lessons";
+export * from "./private_events";

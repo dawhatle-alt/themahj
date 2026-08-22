@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Home, About, Troop } from "@/components/Pages";
+import { PrivateLessons, PrivateEvents } from "@/components/PrivateBooking";
 import { Events, PaymentConfirmation } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
 import type { ApiEvent } from "@/lib/api";
@@ -14,6 +15,8 @@ const PAGES = [
   { id: "about", label: "About" },
   { id: "events", label: "Classes & Events" },
   { id: "troop", label: "Troop Mahjong" },
+  { id: "lessons", label: "Private Lessons" },
+  { id: "private-events", label: "Private Events" },
   { id: "gallery", label: "Photos" },
 ] as const;
 
@@ -28,6 +31,8 @@ const PATHS: Record<string, string> = {
   about: "/about",
   events: "/events",
   troop: "/troop",
+  lessons: "/private-lessons",
+  "private-events": "/private-events",
   gallery: "/gallery",
   admin: "/admin",
 };
@@ -168,7 +173,7 @@ export default function App() {
           </button>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
+          <nav className="hidden lg:flex items-center gap-6" aria-label="Main navigation">
             {PAGES.map(p => {
               const active = page === p.id;
               return (
@@ -193,7 +198,7 @@ export default function App() {
 
           {/* Mobile menu toggle */}
           <button
-            className="md:hidden flex items-center justify-center w-10 h-10 cursor-pointer"
+            className="lg:hidden flex items-center justify-center w-10 h-10 cursor-pointer"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             onClick={() => setMenuOpen(m => !m)}
           >
@@ -204,7 +209,7 @@ export default function App() {
         {/* Mobile nav drawer */}
         {menuOpen && (
           <nav
-            className="md:hidden border-t px-6 py-5 flex flex-col gap-4"
+            className="lg:hidden border-t px-6 py-5 flex flex-col gap-4"
             style={{ borderColor: "rgba(255,255,255,0.08)", background: ESPRESSO }}
             aria-label="Mobile navigation"
           >
@@ -239,6 +244,8 @@ export default function App() {
             {page === "about"   && <About go={go} />}
             {page === "events"  && <Events events={events} loadError={eventsError} onRegistered={refreshEvents} />}
             {page === "troop"   && <Troop go={go} />}
+            {page === "lessons" && <PrivateLessons />}
+            {page === "private-events" && <PrivateEvents />}
             {page === "gallery" && <Gallery />}
             {page === "admin"   && <Admin />}
           </motion.div>

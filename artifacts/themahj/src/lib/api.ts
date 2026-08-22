@@ -132,7 +132,7 @@ class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, init);
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
@@ -148,7 +148,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-function jsonInit(method: string, body: unknown, headers?: Record<string, string>): RequestInit {
+export function jsonInit(method: string, body: unknown, headers?: Record<string, string>): RequestInit {
   return {
     method,
     headers: { "Content-Type": "application/json", ...headers },
@@ -222,7 +222,7 @@ export function setAdminToken(token: string | null): void {
   else sessionStorage.removeItem(ADMIN_TOKEN_KEY);
 }
 
-function adminHeaders(): Record<string, string> {
+export function adminHeaders(): Record<string, string> {
   const token = getAdminToken();
   return token ? { "x-admin-token": token } : {};
 }

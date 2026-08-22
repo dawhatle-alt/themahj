@@ -20,6 +20,17 @@ import {
 } from "@/lib/data";
 import { invalidateCategories, useCategories } from "@/lib/categories";
 import { CONTENT_DEFAULTS, invalidateContent } from "@/lib/content";
+import { PrivateManager } from "@/components/AdminPrivate";
+import {
+  adminListPrivateLessonPackages, adminCreatePrivateLessonPackage,
+  adminUpdatePrivateLessonPackage, adminDeletePrivateLessonPackage,
+  adminListPrivateLessonBookings, adminUpdatePrivateLessonBooking,
+  adminSendPrivateLessonPaymentLink,
+  adminListPrivateEventPackages, adminCreatePrivateEventPackage,
+  adminUpdatePrivateEventPackage, adminDeletePrivateEventPackage,
+  adminListPrivateEventBookings, adminUpdatePrivateEventBooking,
+  adminSendPrivateEventPaymentLink,
+} from "@/lib/privateApi";
 
 // The About page's editable strings, in the order they appear on the page.
 // Labels describe where the text lands rather than naming the key, so the
@@ -174,7 +185,8 @@ const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 const shortDateTime = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
-type Tab = "events" | "registrations" | "orders" | "discounts" | "categories" | "photos" | "content";
+type Tab = "events" | "registrations" | "orders" | "discounts" | "categories" | "photos" | "content"
+  | "plessons" | "pevents";
 
 export function Admin() {
   const categories = useCategories();
@@ -598,6 +610,8 @@ export function Admin() {
         {tabBtn("discounts", "Discount Codes")}
         {tabBtn("categories", "Categories")}
         {tabBtn("photos", "Photos")}
+        {tabBtn("plessons", "Private Lessons")}
+        {tabBtn("pevents", "Private Events")}
         {tabBtn("content", contentDirty ? "Page Text •" : "Page Text")}
       </div>
 
@@ -1313,6 +1327,50 @@ export function Admin() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* PRIVATE LESSONS TAB */}
+      {tab === "plessons" && (
+        <PrivateManager
+          kindLabel="Private lesson"
+          packageDefaults={{ durationMinutes: 60, minPeople: 1, maxPeople: 4, requiresApproval: false }}
+          listPackages={adminListPrivateLessonPackages}
+          createPackage={adminCreatePrivateLessonPackage}
+          updatePackage={adminUpdatePrivateLessonPackage}
+          deletePackage={adminDeletePrivateLessonPackage}
+          listBookings={adminListPrivateLessonBookings}
+          updateBooking={adminUpdatePrivateLessonBooking}
+          sendPaymentLink={adminSendPrivateLessonPaymentLink}
+          bookingExtras={b => [
+            { label: "Experience", value: b.skillLevel },
+            { label: "Prefers", value: b.preferredTimes },
+            { label: "Location", value: b.locationPreference },
+          ]}
+          onError={setNotice}
+          onNotice={setNotice}
+        />
+      )}
+
+      {/* PRIVATE EVENTS TAB */}
+      {tab === "pevents" && (
+        <PrivateManager
+          kindLabel="Private event"
+          packageDefaults={{ durationMinutes: 180, minPeople: 4, maxPeople: 16, requiresApproval: true }}
+          listPackages={adminListPrivateEventPackages}
+          createPackage={adminCreatePrivateEventPackage}
+          updatePackage={adminUpdatePrivateEventPackage}
+          deletePackage={adminDeletePrivateEventPackage}
+          listBookings={adminListPrivateEventBookings}
+          updateBooking={adminUpdatePrivateEventBooking}
+          sendPaymentLink={adminSendPrivateEventPaymentLink}
+          bookingExtras={b => [
+            { label: "Occasion", value: b.occasion },
+            { label: "Venue", value: b.venue },
+            { label: "Dates", value: b.preferredDates },
+          ]}
+          onError={setNotice}
+          onNotice={setNotice}
+        />
       )}
 
       {/* PAGE TEXT TAB */}
