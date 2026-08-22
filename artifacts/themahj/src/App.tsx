@@ -7,6 +7,7 @@ import type { ApiEvent } from "@/lib/api";
 import { listEvents } from "@/lib/api";
 import logoGold from "@/assets/logo-gold.png";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const PAGES = [
   { id: "home", label: "Home" },
@@ -281,10 +282,11 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Vercel Web Analytics. Navigation here is React state rather than
-          URL routes, so this reports visits and sessions but cannot break
-          them down by page until the nav pushes history entries. */}
+      {/* Vercel Web Analytics (who visits) and Speed Insights (how fast it
+          loads for them). Both read the URL, so they report per page now that
+          go() pushes history entries. */}
       <Analytics />
+      <SpeedInsights />
 
     </div>
   );
