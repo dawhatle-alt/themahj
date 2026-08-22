@@ -414,6 +414,9 @@ export function PrivateLessons() {
       headingTop={c("privateLessons.headingTop")}
       headingAccent={c("privateLessons.headingAccent")}
       intro={c("privateLessons.intro")}
+      beforeBooking={startEnquiry => (
+        <PageCopy prefix="privateLessons" accent="var(--rose-deep)" buttonClass="btn-rose" onInquire={startEnquiry} />
+      )}
       enquiryTitle="Not sure which to pick?"
       enquiryBody="Tell us who's learning and what you'd like to get out of it, and we'll suggest the right lesson and price."
       accent="var(--rose-deep)"
@@ -460,15 +463,27 @@ export function PrivateLessons() {
   );
 }
 
-function PrivateEventsCopy({ onInquire }: { onInquire: () => void }) {
+/**
+ * The marketing block both private pages share: an occasion list, a grid of
+ * feature blocks, and a call to action that opens the enquiry form. Every
+ * string comes from site_content under `prefix`, so the client edits all of it
+ * from the Page Text tab without a deploy.
+ */
+function PageCopy({ prefix, accent, buttonClass, onInquire }: {
+  prefix: string;
+  accent: string;
+  buttonClass: string;
+  onInquire: () => void;
+}) {
   const c = useContent();
+  const k = (name: string) => c(`${prefix}.${name}`);
   return (
     <div className="mb-16">
       {/* Perfect for */}
       <motion.div variants={reveal} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        <p className="eyebrow">{c("privateEvents.perfectForLabel")}</p>
+        <p className="eyebrow">{k("perfectForLabel")}</p>
         <div className="flex flex-wrap gap-x-3 gap-y-2 mt-4">
-          {toLines(c("privateEvents.perfectFor")).map(item => (
+          {toLines(k("perfectFor")).map(item => (
             <span key={item}
               className="text-sm px-4 py-1.5 rounded-full border"
               style={{ borderColor: "#E9DFD0", background: "rgba(255,255,255,0.6)", color: "var(--ink)" }}>
@@ -481,14 +496,14 @@ function PrivateEventsCopy({ onInquire }: { onInquire: () => void }) {
       {/* What makes it special */}
       <motion.h2 className="font-display text-3xl md:text-4xl mt-16"
         variants={reveal} custom={0.06} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        {c("privateEvents.featuresHeading")}
+        {k("featuresHeading")}
       </motion.h2>
       <div className="grid sm:grid-cols-2 gap-x-10 gap-y-8 mt-8">
-        {toBlocks(c("privateEvents.features")).map((item, i) => (
+        {toBlocks(k("features")).map((item, i) => (
           <motion.div key={item.title}
             variants={reveal} custom={0.1 + i * 0.08}
             initial="hidden" whileInView="visible" viewport={{ once: true }}>
-            <h3 className="font-display text-2xl" style={{ color: "var(--jade)" }}>{item.title}</h3>
+            <h3 className="font-display text-2xl" style={{ color: accent }}>{item.title}</h3>
             <p className="mt-2 text-[17px] leading-[1.7]" style={{ color: "var(--ink-soft)" }}>
               {item.body}
             </p>
@@ -500,13 +515,13 @@ function PrivateEventsCopy({ onInquire }: { onInquire: () => void }) {
       <motion.div className="mt-16 rounded-2xl px-8 py-12 text-center"
         style={{ background: "var(--ivory-deep)" }}
         variants={reveal} custom={0.1} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-        <h2 className="font-display text-3xl md:text-4xl">{c("privateEvents.ctaHeading")}</h2>
+        <h2 className="font-display text-3xl md:text-4xl">{k("ctaHeading")}</h2>
         <p className="mt-4 max-w-xl mx-auto text-[17px] leading-[1.7]" style={{ color: "var(--ink-soft)" }}>
-          {c("privateEvents.ctaBody")}
+          {k("ctaBody")}
         </p>
         <button type="button" onClick={onInquire}
-          className="btn-jade inline-block mt-8 px-9 py-3.5 rounded-full text-sm uppercase tracking-[0.18em]">
-          {c("privateEvents.ctaButton")}
+          className={`${buttonClass} inline-block mt-8 px-9 py-3.5 rounded-full text-sm uppercase tracking-[0.18em]`}>
+          {k("ctaButton")}
         </button>
       </motion.div>
     </div>
@@ -523,7 +538,9 @@ export function PrivateEvents() {
       headingTop={c("privateEvents.headingTop")}
       headingAccent={c("privateEvents.headingAccent")}
       intro={c("privateEvents.intro")}
-      beforeBooking={startEnquiry => <PrivateEventsCopy onInquire={startEnquiry} />}
+      beforeBooking={startEnquiry => (
+        <PageCopy prefix="privateEvents" accent="var(--jade)" buttonClass="btn-jade" onInquire={startEnquiry} />
+      )}
       enquiryTitle="Inquire about a private event"
       enquiryBody="Tell us a little about your event, and we'll help create a mahjong experience designed for your group."
       accent="var(--jade)"

@@ -37,6 +37,13 @@ export const EDITABLE_KEYS = [
   "privateLessons.headingTop",
   "privateLessons.headingAccent",
   "privateLessons.intro",
+  "privateLessons.perfectForLabel",
+  "privateLessons.perfectFor",
+  "privateLessons.featuresHeading",
+  "privateLessons.features",
+  "privateLessons.ctaHeading",
+  "privateLessons.ctaBody",
+  "privateLessons.ctaButton",
 
   "contact.email",
 ] as const;

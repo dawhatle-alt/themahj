@@ -73,6 +73,21 @@ const CONTENT_FIELDS: { key: string; label: string; hint?: string; rows: number;
   { group: "Private lessons page", key: "privateLessons.headingTop", label: "Big title - first line", rows: 1 },
   { group: "Private lessons page", key: "privateLessons.headingAccent", label: "Big title - second line", hint: "Shown in italic rose.", rows: 1 },
   { group: "Private lessons page", key: "privateLessons.intro", label: "Opening paragraph", rows: 4 },
+  { group: "Private lessons page", key: "privateLessons.perfectForLabel", label: "Label above the list", rows: 1 },
+  {
+    group: "Private lessons page", key: "privateLessons.perfectFor", label: "Perfect for",
+    hint: "One item per line. Each becomes its own pill on the page.",
+    rows: 9,
+  },
+  { group: "Private lessons page", key: "privateLessons.featuresHeading", label: "Heading above the blocks", rows: 1 },
+  {
+    group: "Private lessons page", key: "privateLessons.features", label: "What makes a lesson different",
+    hint: "One block per paragraph, separated by a blank line. The FIRST line of each block is its heading; everything after it is the description. Add or remove blocks freely.",
+    rows: 16,
+  },
+  { group: "Private lessons page", key: "privateLessons.ctaHeading", label: "Closing panel heading", rows: 1 },
+  { group: "Private lessons page", key: "privateLessons.ctaBody", label: "Closing panel text", rows: 3 },
+  { group: "Private lessons page", key: "privateLessons.ctaButton", label: "Closing panel button", rows: 1 },
 
   {
     group: "Contact", key: "contact.email", label: "Email address shown on the site",

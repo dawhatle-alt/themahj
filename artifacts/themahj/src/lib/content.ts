@@ -55,11 +55,33 @@ export const CONTENT_DEFAULTS: Record<string, string> = {
   "privateEvents.ctaButton": "Inquire about a private event",
 
   // ---- Private lessons page ----
-  "privateLessons.eyebrow": "Learn at your own table",
-  "privateLessons.headingTop": "Private",
-  "privateLessons.headingAccent": "lessons.",
+  "privateLessons.eyebrow": "Private lessons",
+  "privateLessons.headingTop": "Private Mahjong Lessons,",
+  "privateLessons.headingAccent": "at your pace.",
   "privateLessons.intro":
-    "One-to-one or a small group, at your pace. Perfect for absolute beginners, or for players who want to sharpen up before joining open play.",
+    "Learn American mahjong in a relaxed, unhurried setting — just you and the people you would like to learn with. Whether you are picking up your first tile or brushing up before joining open play, we start exactly where you are.",
+  "privateLessons.perfectForLabel": "Perfect for",
+  "privateLessons.perfectFor": [
+    "Complete Beginners",
+    "Friends Learning Together",
+    "Getting Ready for Open Play",
+    "Brushing Up on the Card",
+    "Mothers & Daughters",
+    "Neighbors & Book Clubs",
+    "Couples",
+    "One-on-One",
+  ].join("\n"),
+  "privateLessons.featuresHeading": "What Makes a Mahj Edit Lesson Different",
+  "privateLessons.features": [
+    "Everything Provided\nTiles, racks, mats, and current National Mah Jongg League cards are set up and waiting — you just bring yourself.",
+    "At Your Pace, Not a Room’s\nNo keeping up with a class. We move as quickly or as slowly as you like, and go back over anything that has not clicked yet.",
+    "Learn With Your Own People\nBring a friend, your neighbors, or your daughter. Learning together means you will have a table to play at long after the lesson ends.",
+    "Playing by the End\nYou will not just listen — you will play real hands, with the card in front of you and the confidence to actually use it.",
+  ].join("\n\n"),
+  "privateLessons.ctaHeading": "Ready to Learn?",
+  "privateLessons.ctaBody":
+    "Tell us who is learning and what you would like to get out of it, and we will suggest the right lesson for you.",
+  "privateLessons.ctaButton": "Inquire about private lessons",
 
   // ---- Shown on the site ----
   // The address guests are told to write to. Separate from OWNER_EMAIL, which
