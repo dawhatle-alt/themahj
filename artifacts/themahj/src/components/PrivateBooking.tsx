@@ -46,7 +46,6 @@ function PrivateBookingPage(props: {
   headingTop: string;
   headingAccent: string;
   intro: string;
-  emptyMessage: string;
   enquiryTitle: string;
   enquiryBody: string;
   accent: string;
@@ -215,14 +214,14 @@ function PrivateBookingPage(props: {
       )}
 
       {loaded && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 items-start">
-          {/* Packages */}
+        <div className={packages.length > 0
+          ? "grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 items-start"
+          : "max-w-xl"}>
+          {/* Packages. With none published the page is purely an enquiry form —
+              no "nothing listed yet" apology and no redundant enquiry card,
+              because the form beside it is already the only thing to do. */}
+          {packages.length > 0 && (
           <div className="space-y-4">
-            {packages.length === 0 && (
-              <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
-                {props.emptyMessage}
-              </p>
-            )}
             {packages.map((p, i) => {
               const active = selected?.id === p.id;
               return (
@@ -284,6 +283,7 @@ function PrivateBookingPage(props: {
               </p>
             </motion.button>
           </div>
+          )}
 
           {/* Form */}
           <div id="pb-form" className="bg-white/70 border rounded-lg p-6 scroll-mt-28 lg:sticky lg:top-28" style={{ borderColor: "#E9DFD0" }}>
@@ -414,7 +414,6 @@ export function PrivateLessons() {
       headingTop={c("privateLessons.headingTop")}
       headingAccent={c("privateLessons.headingAccent")}
       intro={c("privateLessons.intro")}
-      emptyMessage="Lesson options aren't listed online just yet — tell us what you're after and we'll put something together."
       enquiryTitle="Not sure which to pick?"
       enquiryBody="Tell us who's learning and what you'd like to get out of it, and we'll suggest the right lesson and price."
       accent="var(--rose-deep)"
@@ -525,7 +524,6 @@ export function PrivateEvents() {
       headingAccent={c("privateEvents.headingAccent")}
       intro={c("privateEvents.intro")}
       beforeBooking={startEnquiry => <PrivateEventsCopy onInquire={startEnquiry} />}
-      emptyMessage="Packages aren't listed online just yet — tell us about your event and we'll build something around it."
       enquiryTitle="Inquire about a private event"
       enquiryBody="Tell us a little about your event, and we'll help create a mahjong experience designed for your group."
       accent="var(--jade)"
