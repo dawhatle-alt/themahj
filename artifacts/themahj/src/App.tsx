@@ -16,6 +16,30 @@ const PAGES = [
   { id: "gallery", label: "Photos" },
 ] as const;
 
+// Each page gets a real URL so the browser's back button works, links are
+// shareable, and analytics can tell the pages apart. Navigation is still React
+// state — this only keeps the address bar in step with it.
+//
+// Deep links work because vercel.json rewrites everything except /api to
+// index.html; without that rewrite these paths would 404 on a refresh.
+const PATHS: Record<string, string> = {
+  home: "/",
+  about: "/about",
+  events: "/events",
+  troop: "/troop",
+  gallery: "/gallery",
+  admin: "/admin",
+};
+
+/** Resolves a pathname to a page id, falling back to home for anything unknown. */
+function pageFromPath(pathname: string): string {
+  const clean = pathname.replace(/\/+$/, "") || "/";
+  for (const [id, path] of Object.entries(PATHS)) {
+    if (path === clean) return id;
+  }
+  return "home";
+}
+
 const ESPRESSO = "#1A0F0A";
 const NAV_BASE = "#D9C9B8";
 const NAV_ACTIVE = "#B98A4A";
@@ -48,7 +72,11 @@ function pendingConfirmationId(): number | null {
 }
 
 export default function App() {
-  const [page, setPage] = useState<string>(() => (pendingConfirmationId() !== null ? "events" : "home"));
+  // A Square return lands on /?confirmation=<id> and must show the events page
+  // regardless of the path it came back to; otherwise the URL decides.
+  const [page, setPage] = useState<string>(() =>
+    pendingConfirmationId() !== null ? "events" : pageFromPath(window.location.pathname),
+  );
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [eventsError, setEventsError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,12 +91,32 @@ export default function App() {
   useEffect(() => {
     refreshEvents();
     if (pendingConfirmationId() !== null) {
-      // Clean the query string so refreshes don't re-open the dialog
-      window.history.replaceState(null, "", window.location.pathname);
+      // Clean the query string so refreshes don't re-open the dialog, and put
+      // the address bar on /events to match what is actually rendered.
+      window.history.replaceState({ page: "events" }, "", PATHS.events);
     }
   }, [refreshEvents]);
 
+  // Back/forward move through the pages rather than leaving the site.
+  useEffect(() => {
+    const onPop = () => {
+      setPage(pageFromPath(window.location.pathname));
+      setMenuOpen(false);
+      // The whole view is replaced, so a restored scroll offset would land on
+      // unrelated content.
+      window.scrollTo({ top: 0 });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   function go(p: string) {
+    const path = PATHS[p] ?? "/";
+    // Guard the push so repeat clicks on the current page don't stack up
+    // history entries the back button then has to chew through.
+    if (window.location.pathname !== path) {
+      window.history.pushState({ page: p }, "", path);
+    }
     setPage(p);
     setMenuOpen(false);
     window.scrollTo({ top: 0 });
