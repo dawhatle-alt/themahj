@@ -6,7 +6,10 @@ import { Events, PaymentConfirmation } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
 import type { ApiEvent } from "@/lib/api";
 import { listEvents } from "@/lib/api";
-import logoGold from "@/assets/logo-gold.png";
+// Both the mark and the name are supplied artwork. Nothing in the header is type
+// styled to imitate the logo, so the header always matches the logo files.
+import logoMark from "@/assets/logo-mark-gold.png";
+import logoWordmark from "@/assets/logo-wordmark-gold.png";
 import { useContent } from "@/lib/content";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -136,7 +139,7 @@ export default function App() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-40" style={{ background: ESPRESSO }}>
-        <div className="max-w-6xl mx-auto px-6 h-[88px] flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-[104px] flex items-center justify-between">
 
           {/* Logo — mark + wordmark */}
           <button
@@ -145,38 +148,30 @@ export default function App() {
             aria-label="Go home"
           >
             <img
-              src={logoGold}
+              src={logoMark}
               alt=""
               className="w-auto object-contain block"
               style={{
-                height: "clamp(52px, 6vw, 64px)",
-                filter:
-                  "drop-shadow(0 0 10px rgba(185,138,74,0.65)) drop-shadow(0 0 3px rgba(185,138,74,0.45))",
+                height: "clamp(66px, 7.5vw, 84px)",
+                filter: "drop-shadow(0 0 7px rgba(212,170,88,0.40))",
               }}
             />
-            <span className="hidden sm:flex flex-col items-start" style={{ gap: "1px" }}>
-              <span
-                className="font-display italic leading-none"
-                style={{
-                  fontSize: "clamp(1.25rem, 2.2vw, 1.65rem)",
-                  background: "linear-gradient(135deg, #D4AA58 0%, #B98A4A 45%, #E8CA78 70%, #B98A4A 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                The Mahj Edit
-              </span>
-              <span
-                className="uppercase tracking-[0.3em] leading-none"
-                style={{ fontSize: "0.57rem", color: "#7A6040", letterSpacing: "0.3em" }}
-              >
-                Georgetown, Texas
-              </span>
-            </span>
+            {/* The name is the supplied wordmark artwork rather than type styled to
+                resemble it, so the header matches the logo files exactly. */}
+            <img
+              src={logoWordmark}
+              alt="The Mahj Edit"
+              className="block w-auto object-contain"
+              style={{ height: "clamp(40px, 5.2vw, 60px)" }}
+            />
+            {/* No location line here. The container is capped at max-w-6xl, so the
+                row has a fixed 1104px budget at every viewport, and the mark plus
+                wordmark plus seven nav items already spend it. "Georgetown, Texas"
+                still appears in the hero eyebrow and the footer. */}
           </button>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-6" aria-label="Main navigation">
+          <nav className="hidden xl:flex items-center gap-6" aria-label="Main navigation">
             {PAGES.map(p => {
               const active = page === p.id;
               return (
@@ -201,7 +196,7 @@ export default function App() {
 
           {/* Mobile menu toggle */}
           <button
-            className="lg:hidden flex items-center justify-center w-10 h-10 cursor-pointer"
+            className="xl:hidden flex items-center justify-center w-10 h-10 cursor-pointer"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             onClick={() => setMenuOpen(m => !m)}
           >
@@ -212,7 +207,7 @@ export default function App() {
         {/* Mobile nav drawer */}
         {menuOpen && (
           <nav
-            className="lg:hidden border-t px-6 py-5 flex flex-col gap-4"
+            className="xl:hidden border-t px-6 py-5 flex flex-col gap-4"
             style={{ borderColor: "rgba(255,255,255,0.08)", background: ESPRESSO }}
             aria-label="Mobile navigation"
           >
@@ -266,7 +261,7 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-6 py-12 flex flex-wrap items-end justify-between gap-8">
 
           <div>
-            <img src={logoGold} alt="The Mahj Edit" className="h-16 w-auto object-contain" />
+            <img src={logoWordmark} alt="The Mahj Edit" className="h-20 w-auto object-contain" />
             <p className="text-xs mt-3 uppercase tracking-[0.22em]" style={{ color: "#8A7260" }}>
               Classes · Open Play · Troop Mahjong
             </p>
