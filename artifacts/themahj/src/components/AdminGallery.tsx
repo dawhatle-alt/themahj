@@ -732,7 +732,7 @@ export function Admin() {
                     ) : (
                       <img src={`/api/storage${draft.imagePath}`} alt="Event cover"
                         onError={() => setCoverPreviewBroken(true)}
-                        className="w-24 h-16 object-cover rounded border" style={{ borderColor: "#E9DFD0" }} />
+                        className="w-24 h-16 object-contain rounded border" style={{ borderColor: "#E9DFD0", background: "var(--ivory)" }} />
                     )}
                     <div className="min-w-0">
                       <p className="text-xs" style={{ color: coverPreviewBroken ? "var(--gold)" : "var(--jade)" }}>

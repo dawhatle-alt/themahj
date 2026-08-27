@@ -206,9 +206,19 @@ export function Events({ events, loadError, onRegistered }: {
             return (
               <div key={ev.id} className="bg-white/70 border rounded-lg overflow-hidden p-5" style={{ borderColor: "#E9DFD0" }}>
                 {ev.imagePath && (
-                  <img src={`/api/storage${ev.imagePath}`} alt={ev.title}
-                    className="w-full h-44 object-cover rounded-md -mt-0 mb-4 border" style={{ borderColor: "#E9DFD0" }}
-                    loading="lazy" />
+                  // Covers are whole flyers with the title and details set into the
+                  // artwork, so they have to be shown complete - a fixed-height
+                  // object-cover box cropped ~75% off a portrait one. Contain inside
+                  // a capped shell instead: wide art fills the width, tall art is
+                  // letterboxed on the ivory rather than cut, and nothing upscales.
+                  <div
+                    className="w-full mb-4 rounded-md border overflow-hidden flex items-center justify-center"
+                    style={{ borderColor: "#E9DFD0", background: "var(--ivory)" }}
+                  >
+                    <img src={`/api/storage${ev.imagePath}`} alt={ev.title}
+                      className="max-h-[26rem] w-auto max-w-full object-contain"
+                      loading="lazy" />
+                  </div>
                 )}
                 <div className="flex justify-between items-start gap-3 flex-wrap">
                   <div>
