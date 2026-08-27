@@ -18,6 +18,13 @@ import {
   CATEGORY_COLORS, CATEGORY_COLOR_LABELS, REMINDER_OPTIONS,
   categoryMeta, colorMeta, fmtDate, fmtPrice, formatTimeRange,
 } from "@/lib/data";
+
+// The owner's handbook - how to add events, size a cover image, work through a
+// private enquiry, and edit page copy. Linked from the admin header so it is
+// findable at the moment she needs it rather than buried in an old email.
+// It is a private page: it must stay shared from the artifact's share menu, or
+// this link gives her an access error.
+const HANDBOOK_URL = "https://claude.ai/code/artifact/dfaf4091-2caa-444d-8439-968d6bd12b42";
 import { invalidateCategories, useCategories } from "@/lib/categories";
 import { CONTENT_DEFAULTS, invalidateContent } from "@/lib/content";
 import { PrivateManager } from "@/components/AdminPrivate";
@@ -637,10 +644,17 @@ export function Admin() {
           <p className="eyebrow">Admin</p>
           <h1 className="font-display text-5xl mt-3">Manage The Mahj Edit</h1>
         </div>
-        <button onClick={() => { setAdminToken(null); setAuthed(false); }}
-          className="text-xs uppercase tracking-[0.14em] underline underline-offset-4" style={{ color: "var(--crak)" }}>
-          Lock
-        </button>
+        <div className="flex items-center gap-5">
+          <a href={HANDBOOK_URL} target="_blank" rel="noopener noreferrer"
+            className="text-xs uppercase tracking-[0.14em] underline underline-offset-4"
+            style={{ color: "var(--gold)" }}>
+            Handbook
+          </a>
+          <button onClick={() => { setAdminToken(null); setAuthed(false); }}
+            className="text-xs uppercase tracking-[0.14em] underline underline-offset-4" style={{ color: "var(--crak)" }}>
+            Lock
+          </button>
+        </div>
       </div>
 
       {notice && (

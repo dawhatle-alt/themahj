@@ -113,3 +113,9 @@ them. Emails the site sends on your behalf come from an address on your own
 domain so they don't get caught by spam filters — you don't need to do anything
 with that address, and you can't receive mail at it. Always reply from your own
 email.
+
+---
+
+*This guide is also published as a web page, linked from **Handbook** in the
+top-right of the admin panel. The two are kept in step — edit this file and
+republish the artifact together, or they drift.*
