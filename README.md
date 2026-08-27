@@ -9,9 +9,12 @@ taking the site live — Square, DNS, environment variables, and an end-to-end s
 test. [docs/client-prep.md](docs/client-prep.md) is the client-facing companion,
 safe to send as-is.
 
-[docs/client-guide.md](docs/client-guide.md) is the day-to-day owner's guide —
-events and cover images, the private lessons and events enquiry flow, and the
-Page Text tab. Also written to be sent as-is, so keep it free of internals.
+The day-to-day owner's guide is
+[artifacts/themahj/public/handbook.html](artifacts/themahj/public/handbook.html),
+served at **/handbook** and linked from the admin header. It is the single
+source — there is deliberately no Markdown copy to drift out of step. It is
+written to be read by the owner, so keep it free of internals, and it is
+`noindex` because it sits on a public domain.
 
 ## Structure
 

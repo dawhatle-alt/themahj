@@ -22,9 +22,9 @@ import {
 // The owner's handbook - how to add events, size a cover image, work through a
 // private enquiry, and edit page copy. Linked from the admin header so it is
 // findable at the moment she needs it rather than buried in an old email.
-// It is a private page: it must stay shared from the artifact's share menu, or
-// this link gives her an access error.
-const HANDBOOK_URL = "https://claude.ai/code/artifact/dfaf4091-2caa-444d-8439-968d6bd12b42";
+// Served from our own domain (public/handbook.html, routed as /handbook in
+// vercel.json) so it keeps working regardless of any third party.
+const HANDBOOK_URL = "/handbook";
 import { invalidateCategories, useCategories } from "@/lib/categories";
 import { CONTENT_DEFAULTS, invalidateContent } from "@/lib/content";
 import { PrivateManager } from "@/components/AdminPrivate";

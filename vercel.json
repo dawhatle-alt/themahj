@@ -22,6 +22,10 @@
       "destination": "/api/index"
     },
     {
+      "source": "/handbook",
+      "destination": "/handbook.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
