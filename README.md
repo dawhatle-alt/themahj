@@ -9,6 +9,10 @@ taking the site live — Square, DNS, environment variables, and an end-to-end s
 test. [docs/client-prep.md](docs/client-prep.md) is the client-facing companion,
 safe to send as-is.
 
+[docs/client-guide.md](docs/client-guide.md) is the day-to-day owner's guide —
+events and cover images, the private lessons and events enquiry flow, and the
+Page Text tab. Also written to be sent as-is, so keep it free of internals.
+
 ## Structure
 
 pnpm monorepo, deployed on Vercel:
