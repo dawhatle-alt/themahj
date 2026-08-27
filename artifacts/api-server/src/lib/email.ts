@@ -6,7 +6,10 @@ export const FROM_EMAIL = process.env.EMAIL_FROM ?? process.env.FROM_EMAIL ?? "n
 export const CONTACT_EMAIL = process.env.OWNER_EMAIL ?? process.env.CONTACT_EMAIL ?? "themahjeditco@gmail.com";
 
 export const WEB_ORIGIN = (process.env.PUBLIC_WEB_ORIGIN ?? "https://themahjeditco.com").replace(/\/$/, "");
-const LOGO_URL = `${WEB_ORIGIN}/logo-gold.png`;
+// Her logo in its own colours. Emails render on white, where the red is 5.3:1
+// unaided - no plate needed. (The old /logo-gold.png is left in place so the
+// logo in already-delivered mail still resolves.)
+const LOGO_URL = `${WEB_ORIGIN}/logo-email.png`;
 
 // Branded header for customer-facing emails. Uses the width attribute (respected
 // by most email clients) alongside inline styles, since email CSS support is spotty.

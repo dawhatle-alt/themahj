@@ -6,10 +6,11 @@ import { Events, PaymentConfirmation } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
 import type { ApiEvent } from "@/lib/api";
 import { listEvents } from "@/lib/api";
-// Both the mark and the name are supplied artwork. Nothing in the header is type
-// styled to imitate the logo, so the header always matches the logo files.
-import logoMark from "@/assets/logo-mark-gold.png";
-import logoWordmark from "@/assets/logo-wordmark-gold.png";
+// The client's logo in its own red and sage, on a cream tile. The tile exists
+// because the header and footer are the only espresso surfaces on the site and
+// her red reads at just 3.6:1 against them; on cream it is 4.9:1 and the colours
+// stay hers. One baked image, so mark and name can never drift apart.
+import logoTile from "@/assets/logo-tile.png";
 import { useContent } from "@/lib/content";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -147,22 +148,12 @@ export default function App() {
             className="shrink-0 flex items-center gap-3 leading-none"
             aria-label="Go home"
           >
+            {/* No glow: it haloed the cream tile edge rather than lifting the mark. */}
             <img
-              src={logoMark}
-              alt=""
-              className="w-auto object-contain block"
-              style={{
-                height: "clamp(66px, 7.5vw, 84px)",
-                filter: "drop-shadow(0 0 7px rgba(212,170,88,0.40))",
-              }}
-            />
-            {/* The name is the supplied wordmark artwork rather than type styled to
-                resemble it, so the header matches the logo files exactly. */}
-            <img
-              src={logoWordmark}
+              src={logoTile}
               alt="The Mahj Edit"
-              className="block w-auto object-contain"
-              style={{ height: "clamp(40px, 5.2vw, 60px)" }}
+              className="w-auto object-contain block"
+              style={{ height: "clamp(58px, 6.6vw, 84px)" }}
             />
             {/* No location line here. The container is capped at max-w-6xl, so the
                 row has a fixed 1104px budget at every viewport, and the mark plus
@@ -261,7 +252,7 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-6 py-12 flex flex-wrap items-end justify-between gap-8">
 
           <div>
-            <img src={logoWordmark} alt="The Mahj Edit" className="h-20 w-auto object-contain" />
+            <img src={logoTile} alt="The Mahj Edit" className="h-20 w-auto object-contain" />
             <p className="text-xs mt-3 uppercase tracking-[0.22em]" style={{ color: "#8A7260" }}>
               Classes · Open Play · Troop Mahjong
             </p>
