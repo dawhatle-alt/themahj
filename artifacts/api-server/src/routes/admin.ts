@@ -510,6 +510,17 @@ router.get("/admin/square/diagnostics", requireAdmin, async (_req, res): Promise
     locationLooksLikePlaceholder: !isSquareLocationConfigured() && locationId.length > 0,
     webhookUrlSet: Boolean(process.env.SQUARE_WEBHOOK_URL),
     webhookSignatureKeySet: Boolean(process.env.SQUARE_WEBHOOK_SIGNATURE_KEY),
+    // The SDK dropped the v39 verifier in v44, which failed every delivery while
+    // looking like a signature problem. Surface it here: function logs are not
+    // readable on this deployment, so this panel is how the site gets diagnosed.
+    webhookVerifierUsable: (() => {
+      try {
+        const { WebhooksHelper } = require("square");
+        return typeof WebhooksHelper?.verifySignature === "function";
+      } catch {
+        return false;
+      }
+    })(),
   };
 
   const client = getSquareClient();

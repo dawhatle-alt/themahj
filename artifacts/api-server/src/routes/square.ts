@@ -335,24 +335,38 @@ router.post(
         res.status(400).json({ error: "Webhook body unavailable" });
         return;
       } else {
+        // square v44 takes one options object and is async. The v39 form
+        // (WebhooksHelper.isValidWebhookEventSignature(body, sig, key, url)) no
+        // longer exists on the helper, so calling it threw a TypeError that this
+        // catch turned into a 400 — every delivery failed identically, and the
+        // confirmation page's polling fallback hid it. Keep the call and the
+        // installed major in step.
+        const { WebhooksHelper } = require("square");
+        if (typeof WebhooksHelper?.verifySignature !== "function") {
+          // A missing verifier is a deploy fault, not a bad request: 500 so it
+          // shows up as an error rather than looking like a forged webhook.
+          logger.error("Square WebhooksHelper.verifySignature missing — SDK API changed");
+          res.status(500).json({ error: "Webhook verifier unavailable" });
+          return;
+        }
+        const body = req.rawBody.toString("utf8");
+        const signature = req.headers["x-square-hmacsha256-signature"] as string;
+        let isValid = false;
         try {
-          const { WebhooksHelper } = require("square");
-          const body = req.rawBody.toString("utf8");
-          const signature = req.headers["x-square-hmacsha256-signature"] as string;
-          const isValid = WebhooksHelper.isValidWebhookEventSignature(
-            body,
-            signature,
-            sigKey,
+          isValid = await WebhooksHelper.verifySignature({
+            requestBody: body,
+            signatureHeader: signature,
+            signatureKey: sigKey,
             notificationUrl,
-          );
-          if (!isValid) {
-            logger.warn("Square webhook signature verification failed — rejecting");
-            res.status(400).json({ error: "Invalid webhook signature" });
-            return;
-          }
+          });
         } catch (err) {
-          logger.warn({ err }, "Square webhook signature check threw — rejecting");
+          logger.error({ err }, "Square webhook signature check threw — rejecting");
           res.status(400).json({ error: "Webhook verification error" });
+          return;
+        }
+        if (!isValid) {
+          logger.warn("Square webhook signature verification failed — rejecting");
+          res.status(400).json({ error: "Invalid webhook signature" });
           return;
         }
       }
