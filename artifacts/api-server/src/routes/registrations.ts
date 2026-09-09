@@ -208,8 +208,30 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
 
     const orderRes = await client.orders.get({ orderId });
     const order = orderRes.order;
-    const tenders = (order as { tenders?: Array<{ id?: string }> })?.tenders;
-    const isPaid = Array.isArray(tenders) && tenders.length > 0;
+    // `tenders` is the legacy signal and the v44 SDK does not populate it for
+    // payment-link orders, so relying on it alone reported paid orders as
+    // unpaid. Read the fields Square actually fills, and treat any positive
+    // indication as paid — each requires a non-zero total, so a $0 or open
+    // order can never be mistaken for a completed one.
+    const o = order as {
+      tenders?: Array<{ id?: string }>;
+      state?: string;
+      totalMoney?: { amount?: bigint | number | string };
+      netAmountDueMoney?: { amount?: bigint | number | string };
+    };
+    const num = (v: unknown): number | null =>
+      v === undefined || v === null || !Number.isFinite(Number(v)) ? null : Number(v);
+    const total = num(o?.totalMoney?.amount);
+    const due = num(o?.netAmountDueMoney?.amount);
+    const tenders = o?.tenders;
+
+    const byTender = Array.isArray(tenders) && tenders.length > 0;
+    const byBalance = total !== null && total > 0 && due === 0;
+    const byState = o?.state === "COMPLETED" && total !== null && total > 0;
+    const isPaid = byTender || byBalance || byState;
+
+    // Amounts arrive as bigint, which JSON.stringify throws on — keep numbers.
+    const evidence = { state: o?.state ?? null, total, due, byTender, byBalance, byState };
 
     if (isPaid) {
       await db
@@ -242,10 +264,10 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
 
       await markRedemptionPaid(orderId);
 
-      logger.info({ registrationId: id, orderId }, "Registration confirmed via payment verification");
-      res.json({ status: "confirmed" });
+      logger.info({ registrationId: id, orderId, evidence }, "Registration confirmed via payment verification");
+      res.json({ status: "confirmed", evidence });
     } else {
-      res.json({ status: reg.status, reason: "order_has_no_tenders", orderId });
+      res.json({ status: reg.status, reason: "order_not_paid", orderId, evidence });
     }
   } catch (err) {
     logger.error({ err }, "Error verifying payment with Square");
