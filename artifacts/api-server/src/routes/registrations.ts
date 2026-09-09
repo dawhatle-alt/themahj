@@ -187,14 +187,14 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
   }
 
   if (!reg.paymentSessionId) {
-    res.json({ status: reg.status });
+    res.json({ status: reg.status, reason: "no_payment_session" });
     return;
   }
 
   try {
     const client = getSquareClient();
     if (!client) {
-      res.json({ status: reg.status });
+      res.json({ status: reg.status, reason: "square_unconfigured" });
       return;
     }
 
@@ -202,7 +202,7 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
     const orderId = linkRes.paymentLink?.orderId;
 
     if (!orderId) {
-      res.json({ status: reg.status });
+      res.json({ status: reg.status, reason: "payment_link_has_no_order" });
       return;
     }
 
@@ -245,11 +245,15 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
       logger.info({ registrationId: id, orderId }, "Registration confirmed via payment verification");
       res.json({ status: "confirmed" });
     } else {
-      res.json({ status: reg.status });
+      res.json({ status: reg.status, reason: "order_has_no_tenders", orderId });
     }
   } catch (err) {
     logger.error({ err }, "Error verifying payment with Square");
-    res.json({ status: reg.status });
+    res.json({
+      status: reg.status,
+      reason: "square_lookup_threw",
+      detail: String((err as { message?: string })?.message ?? err).slice(0, 200),
+    });
   }
 });
 
