@@ -208,11 +208,11 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
 
     const orderRes = await client.orders.get({ orderId });
     const order = orderRes.order;
-    // `tenders` is the legacy signal and the v44 SDK does not populate it for
-    // payment-link orders, so relying on it alone reported paid orders as
-    // unpaid. Read the fields Square actually fills, and treat any positive
-    // indication as paid — each requires a non-zero total, so a $0 or open
-    // order can never be mistaken for a completed one.
+    // Paid is decided by `tenders` alone, which is correct: an unpaid
+    // payment-link order sits in state DRAFT with the full amount still due and
+    // no tender, and every confirmed registration on this site has gone through
+    // this check. `state` and the balance are read only as evidence, never as
+    // grounds to confirm — a payment path should not guess.
     const o = order as {
       tenders?: Array<{ id?: string }>;
       state?: string;
@@ -225,13 +225,10 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
     const due = num(o?.netAmountDueMoney?.amount);
     const tenders = o?.tenders;
 
-    const byTender = Array.isArray(tenders) && tenders.length > 0;
-    const byBalance = total !== null && total > 0 && due === 0;
-    const byState = o?.state === "COMPLETED" && total !== null && total > 0;
-    const isPaid = byTender || byBalance || byState;
+    const isPaid = Array.isArray(tenders) && tenders.length > 0;
 
     // Amounts arrive as bigint, which JSON.stringify throws on — keep numbers.
-    const evidence = { state: o?.state ?? null, total, due, byTender, byBalance, byState };
+    const evidence = { state: o?.state ?? null, total, due, tendered: isPaid };
 
     if (isPaid) {
       await db
