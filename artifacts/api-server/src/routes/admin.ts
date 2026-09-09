@@ -159,7 +159,9 @@ router.get("/admin/registrations", requireAdmin, async (_req, res): Promise<void
       seats: r.seats,
       notes: r.notes ?? null,
       status: r.status,
-      paid: !!r.paymentSessionId,
+      // A pending row has a paymentSessionId too - that is the checkout link,
+      // not a payment. Money actually collected is the only honest signal.
+      paid: (r.amountPaidCents ?? 0) > 0,
       discountCode: r.discountCode ?? null,
       amountPaidCents: r.amountPaidCents ?? null,
       createdAt: r.createdAt.toISOString(),
@@ -207,19 +209,27 @@ async function buildCheckinReport(eventId: number) {
     .where(eq(registrationsTable.eventId, eventId))
     .orderBy(asc(registrationsTable.name));
 
+  // Three states, because the door needs to tell "nothing to collect" from
+  // "owes money": a free event confirms with a null amount, a 100% discount
+  // confirms with zero, and an abandoned checkout is neither.
   const participants = regs.map((r) => ({
     name: r.name,
     email: r.email,
     phone: r.phone ?? "",
     seats: r.seats,
     status: r.status,
-    paid: !!r.paymentSessionId,
+    payment:
+      r.status !== "confirmed"
+        ? ("unpaid" as const)
+        : (r.amountPaidCents ?? 0) > 0
+          ? ("paid" as const)
+          : ("free" as const),
     notes: r.notes ?? "",
     registered: r.createdAt.toISOString().slice(0, 10),
   }));
 
   const csvEscape = (s: string) => `"${s.replace(/"/g, '""')}"`;
-  const header = ["#", "Name", "Email", "Phone", "Seats", "Status", "Paid", "Notes", "Registered", "Checked In"];
+  const header = ["#", "Name", "Email", "Phone", "Seats", "Status", "Payment", "Notes", "Registered", "Checked In"];
   const rows = participants.map((p, i) => [
     String(i + 1),
     p.name,
@@ -227,7 +237,7 @@ async function buildCheckinReport(eventId: number) {
     p.phone,
     String(p.seats),
     p.status,
-    p.paid ? "Yes" : "No",
+    { paid: "Paid", free: "Free", unpaid: "UNPAID" }[p.payment],
     p.notes,
     p.registered,
     "", // blank column to tick off at the door

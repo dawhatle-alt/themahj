@@ -82,7 +82,13 @@ export async function sendCheckinReportEmail(opts: {
   eventDate: string;
   eventTime: string;
   eventLocation: string;
-  participants: { name: string; email: string; status: string; paid: boolean; seats: number }[];
+  participants: {
+    name: string;
+    email: string;
+    status: string;
+    payment: "paid" | "free" | "unpaid";
+    seats: number;
+  }[];
   csv: string;
   csvFilename: string;
 }): Promise<void> {
@@ -102,7 +108,7 @@ export async function sendCheckinReportEmail(opts: {
           <td style="padding:4px 10px;border-bottom:1px solid #eee">${esc(p.email)}</td>
           <td style="padding:4px 10px;border-bottom:1px solid #eee">${p.seats}</td>
           <td style="padding:4px 10px;border-bottom:1px solid #eee">${esc(p.status)}</td>
-          <td style="padding:4px 10px;border-bottom:1px solid #eee">${p.paid ? "Paid" : "Free"}</td>
+          <td style="padding:4px 10px;border-bottom:1px solid #eee">${{ paid: "Paid", free: "Free", unpaid: "UNPAID" }[p.payment]}</td>
         </tr>`,
     )
     .join("");
@@ -128,7 +134,7 @@ export async function sendCheckinReportEmail(opts: {
         ${rowsHtml}
       </table>
     `,
-    text: `Check-in list — ${eventTitle}\n${eventDate} · ${eventTime}\n${eventLocation}\n\n${participants.length} registrations, ${totalSeats} seats.\n\n${participants.map((p, i) => `${i + 1}. ${p.name} <${p.email}> — ${p.seats} seat(s), ${p.status}${p.paid ? " (paid)" : ""}`).join("\n")}`,
+    text: `Check-in list — ${eventTitle}\n${eventDate} · ${eventTime}\n${eventLocation}\n\n${participants.length} registrations, ${totalSeats} seats.\n\n${participants.map((p, i) => `${i + 1}. ${p.name} <${p.email}> — ${p.seats} seat(s), ${p.status} (${p.payment})`).join("\n")}`,
     attachments: [
       {
         filename: csvFilename,
