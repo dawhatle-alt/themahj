@@ -166,9 +166,12 @@ export function Events({ events, loadError, onRegistered }: {
               );
             })}
           </div>
-          <div className="flex gap-4 mt-4 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>
+          {/* Categories are admin-managed, so this row has no fixed length. Keep
+              each label whole and let the row wrap: a fourth category on a phone
+              squeezed every label onto two lines and pushed the last one out. */}
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--ink-soft)" }}>
             {categories.map(c => (
-              <span key={c.id} className="flex items-center gap-1.5">
+              <span key={c.id} className="flex items-center gap-1.5 whitespace-nowrap">
                 <span className="w-2.5 h-2.5 rounded-sm inline-block"
                   style={{ background: colorMeta(c.color).calendar }} /> {c.name}
               </span>
