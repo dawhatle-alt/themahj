@@ -18,6 +18,29 @@ export const logoHeader = `
         <img src="${LOGO_URL}" alt="The Mahj Edit" width="180" style="width:180px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none" />
       </div>`;
 
+/**
+ * "2026-09-23" -> "Wednesday, September 23" - the same wording the website uses
+ * (fmtDate in the frontend's data.ts), so an email never reads differently from
+ * the page the guest booked on. Dates are stored as plain YYYY-MM-DD text, and
+ * building the Date in UTC and formatting it in UTC keeps the day from sliding
+ * back by one in a timezone behind UTC. Anything not in that shape is returned
+ * untouched, so an unexpected value degrades to its raw form instead of
+ * "Invalid Date".
+ */
+export function formatEventDate(value: string | null | undefined): string {
+  const raw = (value ?? "").trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!m) return raw;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  // Date silently rolls impossible dates forward (2026-02-29 -> March 1). A
+  // confidently wrong day is worse than the raw value, so require a round trip.
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return raw;
+  return dt.toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric", timeZone: "UTC",
+  });
+}
+
 export function getClient(): Resend | null {
   if (!RESEND_API_KEY) {
     logger.warn("RESEND_API_KEY is not set — email delivery is disabled");
@@ -44,7 +67,8 @@ export async function sendRegistrationConfirmationEmail(opts: {
   const client = getClient();
   if (!client) return;
 
-  const { registrantName, registrantEmail, eventTitle, eventDate, eventTime, eventLocation, eventHost } = opts;
+  const { registrantName, registrantEmail, eventTitle, eventDate: rawEventDate, eventTime, eventLocation, eventHost } = opts;
+  const eventDate = formatEventDate(rawEventDate);
   const seats = opts.seats ?? 1;
 
   const { error } = await client.emails.send({
@@ -95,7 +119,8 @@ export async function sendCheckinReportEmail(opts: {
   const client = getClient();
   if (!client) throw new Error("Email delivery is not configured (RESEND_API_KEY missing)");
 
-  const { to, eventTitle, eventDate, eventTime, eventLocation, participants, csv, csvFilename } = opts;
+  const { to, eventTitle, eventDate: rawEventDate, eventTime, eventLocation, participants, csv, csvFilename } = opts;
+  const eventDate = formatEventDate(rawEventDate);
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const totalSeats = participants.reduce((n, p) => n + p.seats, 0);
 
@@ -164,7 +189,8 @@ export async function sendReminderEmail(opts: {
   const client = getClient();
   if (!client) return;
 
-  const { registrantName, registrantEmail, eventTitle, eventDate, eventTime, eventLocation, eventHost, hoursUntilEvent } = opts;
+  const { registrantName, registrantEmail, eventTitle, eventDate: rawEventDate, eventTime, eventLocation, eventHost, hoursUntilEvent } = opts;
+  const eventDate = formatEventDate(rawEventDate);
 
   const timeLabel =
     hoursUntilEvent >= 168 ? `${Math.round(hoursUntilEvent / 168)} week` :

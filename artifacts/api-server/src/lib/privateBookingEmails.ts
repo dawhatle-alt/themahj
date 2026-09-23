@@ -1,5 +1,5 @@
 import { logger } from "./logger";
-import { FROM_EMAIL, CONTACT_EMAIL, WEB_ORIGIN, logoHeader, getClient } from "./email";
+import { FROM_EMAIL, CONTACT_EMAIL, WEB_ORIGIN, logoHeader, getClient, formatEventDate } from "./email";
 
 // Private lessons and private events keep their own tables and routes, but a
 // guest reads "your booking is confirmed" the same way either way — so these
@@ -196,10 +196,11 @@ export async function sendPrivateBookingScheduledEmail(
 
   const due = opts.amountDueCents ?? 0;
   const awaitingPayment = due > 0;
+  const when = formatEventDate(opts.scheduledDate);
 
   const whenWhere = `
       <table style="border-collapse:collapse;margin:16px 0">
-        ${detailRow("Date", opts.scheduledDate)}
+        ${detailRow("Date", when)}
         ${detailRow("Time", opts.scheduledTime)}
         ${detailRow("Where", opts.scheduledLocation)}
         ${detailRow("Group size", String(opts.groupSize))}
@@ -225,8 +226,8 @@ export async function sendPrivateBookingScheduledEmail(
     to: [opts.email],
     replyTo: CONTACT_EMAIL,
     subject: awaitingPayment
-      ? `Your ${opts.kindLabel} on ${opts.scheduledDate} - payment to confirm`
-      : `Confirmed: your ${opts.kindLabel} on ${opts.scheduledDate}`,
+      ? `Your ${opts.kindLabel} on ${when} - payment to confirm`
+      : `Confirmed: your ${opts.kindLabel} on ${when}`,
     html: `${logoHeader}
       <h2>${awaitingPayment ? "We have held your date" : "It is in the diary"}</h2>
       <p>Hi ${esc(opts.name)},</p>
