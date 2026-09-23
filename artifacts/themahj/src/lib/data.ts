@@ -43,6 +43,39 @@ export function categoryMeta(
   return { label: category, ...colorMeta(found?.color ?? "gold") };
 }
 
+// ---------- Event links ----------
+// Public link for one event: /events/<id>-<words>. The id resolves it; the
+// words are for people reading it, so renaming an event never breaks a link
+// already posted on Facebook or sitting in an inbox.
+// Keep in step with lib/eventLinks.ts in the api-server, which builds the same
+// path for the link-preview tags.
+const MAX_SLUG = 60;
+
+export function eventSlug(title: string): string {
+  let s = title
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (s.length > MAX_SLUG) s = s.slice(0, MAX_SLUG).replace(/-[^-]*$/, "");
+  return s;
+}
+
+export function eventPath(ev: { id: number; title: string }): string {
+  const slug = eventSlug(ev.title);
+  return slug ? `/events/${ev.id}-${slug}` : `/events/${ev.id}`;
+}
+
+/** The event id in an /events/<id>-<words> path, or null for anything else. */
+export function eventIdFromPath(pathname: string): number | null {
+  const m = /^\/events\/(\d+)(?:-[^/]*)?\/?$/.exec(pathname);
+  if (!m) return null;
+  const id = Number(m[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 // ---------- Formatting helpers ----------
 export function fmtDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);

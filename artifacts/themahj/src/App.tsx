@@ -6,6 +6,7 @@ import { Events, PaymentConfirmation } from "@/components/Events";
 import { Gallery, Admin } from "@/components/AdminGallery";
 import type { ApiEvent } from "@/lib/api";
 import { listEvents } from "@/lib/api";
+import { eventIdFromPath, eventPath } from "@/lib/data";
 // The client's logo in its own red and sage, on a cream tile. The tile exists
 // because the header and footer are the only espresso surfaces on the site and
 // her red reads at just 3.6:1 against them; on cream it is 4.9:1 and the colours
@@ -44,6 +45,9 @@ const PATHS: Record<string, string> = {
 
 /** Resolves a pathname to a page id, falling back to home for anything unknown. */
 function pageFromPath(pathname: string): string {
+  // A shared event link, /events/<id>-<words>, is the events page focused on
+  // one event.
+  if (eventIdFromPath(pathname) !== null) return "events";
   const clean = pathname.replace(/\/+$/, "") || "/";
   for (const [id, path] of Object.entries(PATHS)) {
     if (path === clean) return id;
@@ -94,6 +98,10 @@ export default function App() {
   const [eventsError, setEventsError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmationId, setConfirmationId] = useState<number | null>(() => pendingConfirmationId());
+  // The event a shared link points at, when the address is /events/<id>-<words>.
+  const [focusEventId, setFocusEventId] = useState<number | null>(() =>
+    pendingConfirmationId() !== null ? null : eventIdFromPath(window.location.pathname),
+  );
 
   const refreshEvents = useCallback(() => {
     listEvents()
@@ -114,6 +122,7 @@ export default function App() {
   useEffect(() => {
     const onPop = () => {
       setPage(pageFromPath(window.location.pathname));
+      setFocusEventId(eventIdFromPath(window.location.pathname));
       setMenuOpen(false);
       // The whole view is replaced, so a restored scroll offset would land on
       // unrelated content.
@@ -131,6 +140,19 @@ export default function App() {
       window.history.pushState({ page: p }, "", path);
     }
     setPage(p);
+    setFocusEventId(null);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0 });
+  }
+
+  /** Opens one event on its own shareable page. */
+  function openEvent(ev: { id: number; title: string }) {
+    const path = eventPath(ev);
+    if (window.location.pathname !== path) {
+      window.history.pushState({ page: "events", eventId: ev.id }, "", path);
+    }
+    setPage("events");
+    setFocusEventId(ev.id);
     setMenuOpen(false);
     window.scrollTo({ top: 0 });
   }
@@ -231,7 +253,16 @@ export default function App() {
           >
             {page === "home"    && <Home events={events} go={go} />}
             {page === "about"   && <About go={go} />}
-            {page === "events"  && <Events events={events} loadError={eventsError} onRegistered={refreshEvents} />}
+            {page === "events"  && (
+              <Events
+                events={events}
+                loadError={eventsError}
+                onRegistered={refreshEvents}
+                focusEventId={focusEventId}
+                onOpenEvent={openEvent}
+                onShowAll={() => go("events")}
+              />
+            )}
             {page === "troop"   && <Troop go={go} />}
             {page === "lessons" && <PrivateLessons />}
             {page === "private-events" && <PrivateEvents />}

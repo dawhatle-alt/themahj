@@ -163,6 +163,12 @@ export async function listEvents(): Promise<ApiEvent[]> {
   return data.events;
 }
 
+/** One published event by id. Throws ApiError(404) for unknown or unpublished. */
+export async function getEvent(id: number): Promise<ApiEvent> {
+  const data = await request<{ event: ApiEvent }>(`/events/${id}`);
+  return data.event;
+}
+
 export async function listCategories(): Promise<ApiCategory[]> {
   const data = await request<{ categories: ApiCategory[] }>("/categories");
   return data.categories;

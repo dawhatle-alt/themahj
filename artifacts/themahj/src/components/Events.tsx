@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { ApiEvent, ApiRegistration } from "@/lib/api";
-import { checkout, getConfirmation, registerFree, verifyPayment } from "@/lib/api";
-import { categoryMeta, colorMeta, fmtDate, fmtPrice } from "@/lib/data";
+import { checkout, getConfirmation, getEvent, registerFree, verifyPayment } from "@/lib/api";
+import { categoryMeta, colorMeta, eventPath, fmtDate, fmtPrice } from "@/lib/data";
 import { useCategories } from "@/lib/categories";
 import { useContent } from "@/lib/content";
 
@@ -19,14 +19,89 @@ function monthLabel(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-export function Events({ events, loadError, onRegistered }: {
+/** Today as YYYY-MM-DD in the visitor's own timezone - an event has "passed"
+ *  once its day is over where they are, not when UTC says so. */
+function localTodayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function Events({ events, loadError, onRegistered, focusEventId = null, onOpenEvent, onShowAll }: {
   events: ApiEvent[];
   loadError: boolean;
   onRegistered: () => void;
+  /** Set when the address is a shared link, /events/<id>-<words>. */
+  focusEventId?: number | null;
+  onOpenEvent?: (ev: ApiEvent) => void;
+  onShowAll?: () => void;
 }) {
   const categories = useCategories();
   const contactEmail = useContent()("contact.email");
   const today = new Date();
+  const todayIso = localTodayIso();
+
+  // A shared link can point at an event that is not in the list - one that has
+  // passed, or before the list has loaded - so fall back to fetching it alone.
+  const listed = focusEventId !== null ? events.find(e => e.id === focusEventId) ?? null : null;
+  const [fetched, setFetched] = useState<ApiEvent | null>(null);
+  const [focusMissing, setFocusMissing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  useEffect(() => {
+    setFocusMissing(false);
+    setFetched(null);
+    if (focusEventId === null || listed) return;
+    let live = true;
+    getEvent(focusEventId)
+      .then(ev => { if (live) setFetched(ev); })
+      .catch(() => { if (live) setFocusMissing(true); });
+    return () => { live = false; };
+    // `listed` is deliberately left out: once the list arrives it supersedes
+    // the fetch, and re-running here would only cancel a request in flight.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusEventId]);
+
+  const focus = listed ?? fetched;
+
+  useEffect(() => {
+    if (!focus) return;
+    // Put the address bar on the current wording, so a link copied from it
+    // matches the event's name even if it was renamed after being shared.
+    const canonical = eventPath(focus);
+    if (window.location.pathname !== canonical) {
+      window.history.replaceState(window.history.state, "", canonical);
+    }
+    const previous = document.title;
+    document.title = `${focus.title} — The Mahj Edit`;
+    return () => { document.title = previous; };
+  }, [focus]);
+
+  async function shareEvent(ev: ApiEvent) {
+    const url = `${window.location.origin}${eventPath(ev)}`;
+    // On a phone this opens the share sheet - Messages, Instagram, Facebook.
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: ev.title, url });
+      } catch {
+        /* dismissed - nothing to do */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
+  }
+
+  /** Plain clicks stay in the app; ctrl/cmd/middle-click still open a new tab. */
+  function followEventLink(e: ReactMouseEvent<HTMLAnchorElement>, ev: ApiEvent) {
+    if (!onOpenEvent || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onOpenEvent(ev);
+  }
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: today.getFullYear(), m: today.getMonth() });
   const [selected, setSelected] = useState<ApiEvent | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
@@ -99,8 +174,118 @@ export function Events({ events, loadError, onRegistered }: {
   const inputCls = "w-full rounded-md border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--rose)]";
   const isPaid = !!(selected?.priceCents && selected.priceCents > 0);
 
+  /** One event card - the same markup in the list and on an event's own page. */
+  function renderCard(ev: ApiEvent, focused: boolean) {
+    const left = ev.spotsLeft;
+    // /api/events includes past events, so without this a finished event kept
+    // offering "Reserve a seat".
+    const past = ev.date < todayIso;
+    return (
+      <div key={ev.id} className="bg-white/70 border rounded-lg overflow-hidden p-5" style={{ borderColor: "#E9DFD0" }}>
+        {ev.imagePath && (
+          // Covers are whole flyers with the title and details set into the
+          // artwork, so they have to be shown complete - a fixed-height
+          // object-cover box cropped ~75% off a portrait one. Contain inside
+          // a capped shell instead: wide art fills the width, tall art is
+          // letterboxed on the ivory rather than cut, and nothing upscales.
+          <div
+            className="w-full mb-4 rounded-md border overflow-hidden flex items-center justify-center"
+            style={{ borderColor: "#E9DFD0", background: "var(--ivory)" }}
+          >
+            <img src={`/api/storage${ev.imagePath}`} alt={ev.title}
+              className={`${focused ? "max-h-[36rem]" : "max-h-[26rem]"} w-auto max-w-full object-contain`}
+              loading={focused ? "eager" : "lazy"} />
+          </div>
+        )}
+        <div className="flex justify-between items-start gap-3 flex-wrap">
+          <div>
+            <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category, categories).chip}`}>
+              {categoryMeta(ev.category, categories).label}
+            </span>
+            {focused ? (
+              <h1 className="font-display text-3xl sm:text-4xl mt-2 leading-tight">{ev.title}</h1>
+            ) : (
+              <h3 className="font-display text-2xl mt-2">
+                <a href={eventPath(ev)} onClick={e => followEventLink(e, ev)}
+                  className="hover:underline underline-offset-4 decoration-1">
+                  {ev.title}
+                </a>
+              </h3>
+            )}
+            <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>
+              {fmtDate(ev.date)} · {ev.time} · {ev.location}
+            </p>
+          </div>
+          {/* Right-aligned beside the title on wide screens; once it wraps
+              onto its own line a right-aligned block just looks indented,
+              so read as one line instead. */}
+          <div className="flex items-baseline gap-2 sm:block sm:text-right">
+            <p className="font-display text-2xl">{fmtPrice(ev.priceCents)}</p>
+            {!past && (
+              <p className="text-xs sm:mt-0.5" style={{ color: left === 0 ? "var(--crak)" : "var(--jade)" }}>
+                {left === 0 ? "Sold out" : `${left} seat${left === 1 ? "" : "s"} left`}
+              </p>
+            )}
+          </div>
+        </div>
+        <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--ink-soft)" }}>{ev.description}</p>
+        <div className="flex items-center gap-3 flex-wrap mt-4">
+          {past ? (
+            <p className="text-sm italic" style={{ color: "var(--ink-soft)" }}>This event has passed.</p>
+          ) : (
+            <button disabled={left === 0} onClick={() => openSignup(ev)}
+              className="btn-rose px-6 py-2.5 rounded-full border border-transparent text-xs uppercase tracking-[0.18em] disabled:opacity-40 disabled:pointer-events-none">
+              Reserve a seat
+            </button>
+          )}
+          {focused && (
+            <button onClick={() => void shareEvent(ev)}
+              className="px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] border"
+              style={{ borderColor: "#E9DFD0", color: "var(--ink-soft)" }}>
+              {linkCopied ? "Link copied" : "Share"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const allEventsLink = (
+    <a href="/events"
+      onClick={e => {
+        if (!onShowAll || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        onShowAll();
+      }}
+      className="text-xs uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+      style={{ color: "var(--rose-deep)" }}>
+      ← All events
+    </a>
+  );
+
+  // A shared link: just the one event, with a way back to the whole calendar.
+  const focusedView = focusEventId !== null && (
+    <div className="max-w-2xl">
+      {allEventsLink}
+      <div className="mt-6">
+        {focus ? renderCard(focus, true) : focusMissing ? (
+          <div className="bg-white/70 border rounded-lg p-8 text-center" style={{ borderColor: "#E9DFD0" }}>
+            <p className="font-display italic text-2xl">This event isn't available</p>
+            <p className="text-sm mt-2" style={{ color: "var(--ink-soft)" }}>
+              It may have been removed or not announced yet. Everything that's coming up is on the calendar.
+            </p>
+            <div className="mt-4">{allEventsLink}</div>
+          </div>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--ink-soft)" }}>Loading…</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-14">
+      {focusedView || (<>
       <motion.p className="eyebrow"
         variants={reveal} custom={0} initial="hidden" animate="visible">
         Classes &amp; open play
@@ -204,55 +389,10 @@ export function Events({ events, loadError, onRegistered }: {
               )}
             </div>
           )}
-          {upcoming.map(ev => {
-            const left = ev.spotsLeft;
-            return (
-              <div key={ev.id} className="bg-white/70 border rounded-lg overflow-hidden p-5" style={{ borderColor: "#E9DFD0" }}>
-                {ev.imagePath && (
-                  // Covers are whole flyers with the title and details set into the
-                  // artwork, so they have to be shown complete - a fixed-height
-                  // object-cover box cropped ~75% off a portrait one. Contain inside
-                  // a capped shell instead: wide art fills the width, tall art is
-                  // letterboxed on the ivory rather than cut, and nothing upscales.
-                  <div
-                    className="w-full mb-4 rounded-md border overflow-hidden flex items-center justify-center"
-                    style={{ borderColor: "#E9DFD0", background: "var(--ivory)" }}
-                  >
-                    <img src={`/api/storage${ev.imagePath}`} alt={ev.title}
-                      className="max-h-[26rem] w-auto max-w-full object-contain"
-                      loading="lazy" />
-                  </div>
-                )}
-                <div className="flex justify-between items-start gap-3 flex-wrap">
-                  <div>
-                    <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${categoryMeta(ev.category, categories).chip}`}>
-                      {categoryMeta(ev.category, categories).label}
-                    </span>
-                    <h3 className="font-display text-2xl mt-2">{ev.title}</h3>
-                    <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>
-                      {fmtDate(ev.date)} · {ev.time} · {ev.location}
-                    </p>
-                  </div>
-                  {/* Right-aligned beside the title on wide screens; once it wraps
-                      onto its own line a right-aligned block just looks indented,
-                      so read as one line instead. */}
-                  <div className="flex items-baseline gap-2 sm:block sm:text-right">
-                    <p className="font-display text-2xl">{fmtPrice(ev.priceCents)}</p>
-                    <p className="text-xs sm:mt-0.5" style={{ color: left === 0 ? "var(--crak)" : "var(--jade)" }}>
-                      {left === 0 ? "Sold out" : `${left} seat${left === 1 ? "" : "s"} left`}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--ink-soft)" }}>{ev.description}</p>
-                <button disabled={left === 0} onClick={() => openSignup(ev)}
-                  className="btn-rose px-6 py-2.5 rounded-full text-xs uppercase tracking-[0.18em] mt-4 disabled:opacity-40 disabled:pointer-events-none">
-                  Reserve a seat
-                </button>
-              </div>
-            );
-          })}
+          {upcoming.map(ev => renderCard(ev, false))}
         </motion.div>
       </div>
+      </>)}
 
       {/* Signup dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && !busy && setSelected(null)}>

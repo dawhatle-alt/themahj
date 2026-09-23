@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import {
   CATEGORY_COLORS, CATEGORY_COLOR_LABELS, REMINDER_OPTIONS,
-  categoryMeta, colorMeta, fmtDate, fmtPrice, formatTimeRange,
+  categoryMeta, colorMeta, eventPath, fmtDate, fmtPrice, formatTimeRange,
 } from "@/lib/data";
 
 // The owner's handbook - how to add events, size a cover image, work through a
@@ -280,7 +280,22 @@ export function Admin() {
   const [codeDraft, setCodeDraft] = useState({ code: "", percent: "10", description: "" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [copiedEventId, setCopiedEventId] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // The link to paste into an email, a post, or a text. It is built from the id,
+  // so it keeps working if the event is renamed later.
+  async function copyEventLink(ev: { id: number; title: string }) {
+    const url = `${window.location.origin}${eventPath(ev)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt("Copy this link:", url);
+      return;
+    }
+    setCopiedEventId(ev.id);
+    window.setTimeout(() => setCopiedEventId(c => (c === ev.id ? null : c)), 2000);
+  }
   const coverRef = useRef<HTMLInputElement>(null);
   const inputCls = "w-full rounded-md border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--rose)]";
   const statLabelCls = "text-[11px] uppercase tracking-[0.12em]";
@@ -853,6 +868,14 @@ export function Admin() {
                   </div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
+                  {/* A draft's link shows "this event isn't available" to anyone
+                      who opens it, so there is nothing to share until it is published. */}
+                  <button onClick={() => void copyEventLink(ev)} disabled={!ev.published}
+                    title={ev.published ? "Copy the public link to this event" : "Publish this event to share it"}
+                    className="px-4 py-1.5 rounded-full text-xs border disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ borderColor: "var(--rose)", color: "var(--rose-deep)" }}>
+                    {copiedEventId === ev.id ? "Link copied" : ev.published ? "Copy link" : "Publish to share"}
+                  </button>
                   <button onClick={() => void adminDownloadCheckinReport(ev.id).catch(() => setNotice("Could not download the check-in list"))}
                     className="px-4 py-1.5 rounded-full text-xs border" style={{ borderColor: "var(--gold)", color: "var(--gold)" }}>
                     Check-in CSV

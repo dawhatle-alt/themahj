@@ -26,6 +26,10 @@
       "destination": "/handbook.html"
     },
     {
+      "source": "/events/:slug",
+      "destination": "/api/index"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
