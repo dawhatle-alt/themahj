@@ -17,7 +17,7 @@ export interface CategoryMeta {
 const COLOR_META: Record<CategoryColor, Omit<CategoryMeta, "label">> = {
   jade: { chip: "bg-[var(--jade-soft)] text-[var(--jade)]", calendar: "var(--jade)", swatch: "var(--jade)" },
   rose: { chip: "bg-[var(--blush)] text-[var(--rose-deep)]", calendar: "var(--rose)", swatch: "var(--rose)" },
-  gold: { chip: "bg-[#F3E7D3] text-[var(--gold)]", calendar: "var(--gold)", swatch: "var(--gold)" },
+  gold: { chip: "bg-[#F3E7D3] text-[var(--gold-ink)]", calendar: "var(--gold-ink)", swatch: "var(--gold-ink)" },
   crak: { chip: "bg-[#FBECEC] text-[var(--crak)]", calendar: "var(--crak)", swatch: "var(--crak)" },
   ink: { chip: "bg-[var(--ivory-deep)] text-[var(--ink-soft)]", calendar: "var(--ink-soft)", swatch: "var(--ink-soft)" },
 };

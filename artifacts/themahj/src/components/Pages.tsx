@@ -188,7 +188,7 @@ export function About({ go }: { go: (p: string) => void }) {
               </motion.p>
             ))}
 
-            <motion.p className="font-display italic text-xl pt-1" style={{ color: "var(--gold)" }}
+            <motion.p className="font-display italic text-xl pt-1" style={{ color: "var(--gold-ink)" }}
               variants={reveal} custom={0.52} initial="hidden" whileInView="visible" viewport={{ once: true }}>
               {c("about.closing")}
             </motion.p>

@@ -316,7 +316,7 @@ export function Events({ events, loadError, onRegistered, focusEventId = null, o
             <button aria-label="Next month" onClick={() => setYm(({ y, m }) => m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 })}
               className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-[var(--blush)]">›</button>
           </div>
-          <div className="grid grid-cols-7 text-center text-[11px] uppercase tracking-[0.14em] pb-2" style={{ color: "var(--gold)" }}>
+          <div className="grid grid-cols-7 text-center text-[11px] uppercase tracking-[0.14em] pb-2" style={{ color: "var(--gold-ink)" }}>
             {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => <div key={d}>{d}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1">

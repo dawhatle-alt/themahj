@@ -16,6 +16,11 @@
     --jade: #2E6B5A;
     --jade-soft: #DCE9E2;
     --gold: #B98A4A;
+    /* --gold is only 2.9:1 on ivory, so it is for rules, borders and dark
+       surfaces. Gold *text* on any light surface uses --gold-ink, which
+       clears 4.5:1 on every light background here (tan admin panels and
+       blush included). */
+    --gold-ink: #825C2A;
     --crak: #B33A3A;
 
     --background: 36 50% 96%;
@@ -59,7 +64,7 @@
   }
   .eyebrow {
     @apply uppercase tracking-[0.28em] text-xs font-medium;
-    color: var(--gold);
+    color: var(--gold-ink);
   }
   .hairline {
     height: 1px;

@@ -256,7 +256,7 @@ export function PrivateManager<B extends ManagedBooking>(props: {
                   <span className="text-[10px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full"
                     style={{
                       background: paid ? "rgba(90,140,110,0.14)" : "rgba(185,138,74,0.14)",
-                      color: paid ? "var(--jade)" : "var(--gold)",
+                      color: paid ? "var(--jade)" : "var(--gold-ink)",
                     }}>
                     {STATUS_LABEL[b.status] ?? b.status}
                   </span>

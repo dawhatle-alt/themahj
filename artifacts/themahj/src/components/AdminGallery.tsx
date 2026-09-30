@@ -662,7 +662,7 @@ export function Admin() {
         <div className="flex items-center gap-5">
           <a href={HANDBOOK_URL} target="_blank" rel="noopener noreferrer"
             className="text-xs uppercase tracking-[0.14em] underline underline-offset-4"
-            style={{ color: "var(--gold)" }}>
+            style={{ color: "var(--gold-ink)" }}>
             Handbook
           </a>
           <button onClick={() => { setAdminToken(null); setAuthed(false); }}
@@ -712,17 +712,17 @@ export function Admin() {
                   intrinsic minimum, which on a phone pushed the whole card
                   past the viewport. */}
               <div className="flex flex-wrap gap-3 items-end">
-                <label className="flex-1 basis-[130px] min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                <label className="flex-1 basis-[130px] min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold-ink)" }}>
                   Starts
                   <input className={inputCls + " mt-1"} type="time" value={draft.startTime}
                     onChange={e => setDraft({ ...draft, startTime: e.target.value })} />
                 </label>
-                <label className="flex-1 basis-[130px] min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                <label className="flex-1 basis-[130px] min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold-ink)" }}>
                   Ends
                   <input className={inputCls + " mt-1"} type="time" value={draft.endTime}
                     onChange={e => setDraft({ ...draft, endTime: e.target.value })} />
                 </label>
-                <label className="w-full sm:w-auto sm:max-w-[140px] text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                <label className="w-full sm:w-auto sm:max-w-[140px] text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold-ink)" }}>
                   Price ($)
                   <input className={inputCls + " mt-1"} placeholder="Blank = free" value={draft.price}
                     onChange={e => setDraft({ ...draft, price: e.target.value })} />
@@ -734,12 +734,12 @@ export function Admin() {
                 </p>
               )}
               <div className="flex gap-3 items-end">
-                <label className="flex-1 min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                <label className="flex-1 min-w-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold-ink)" }}>
                   Location
                   <input className={inputCls + " mt-1"} value={draft.location}
                     onChange={e => setDraft({ ...draft, location: e.target.value })} />
                 </label>
-                <label className="w-[92px] shrink-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+                <label className="w-[92px] shrink-0 text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold-ink)" }}>
                   Seats
                   <input className={inputCls + " mt-1"} type="number" min={1} value={draft.totalSpots}
                     onChange={e => setDraft({ ...draft, totalSpots: Number(e.target.value) || 1 })} />
@@ -750,7 +750,7 @@ export function Admin() {
               {/* Cover image */}
               <div className="rounded-md border bg-white p-3"
                 style={{ borderColor: coverError ? "var(--crak)" : "#E9DFD0" }}>
-                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: "var(--gold)" }}>Cover image</p>
+                <p className="text-xs uppercase tracking-[0.14em] mb-2" style={{ color: "var(--gold-ink)" }}>Cover image</p>
                 {draft.imagePath ? (
                   <div className="flex items-center gap-3">
                     {coverPreviewBroken ? (
@@ -764,7 +764,7 @@ export function Admin() {
                         className="w-24 h-16 object-contain rounded border" style={{ borderColor: "#E9DFD0", background: "var(--ivory)" }} />
                     )}
                     <div className="min-w-0">
-                      <p className="text-xs" style={{ color: coverPreviewBroken ? "var(--gold)" : "var(--jade)" }}>
+                      <p className="text-xs" style={{ color: coverPreviewBroken ? "var(--gold-ink)" : "var(--jade)" }}>
                         {coverPreviewBroken ? "Attached, but it won't display" : "Image attached"}
                       </p>
                       <button
@@ -805,7 +805,7 @@ export function Admin() {
                 )}
               </div>
 
-              <label className="block text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold)" }}>
+              <label className="block text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--gold-ink)" }}>
                 Reminder email
                 <select className={inputCls + " mt-1"} value={draft.reminderHoursBefore ?? ""}
                   onChange={e => setDraft({ ...draft, reminderHoursBefore: e.target.value ? Number(e.target.value) : null })}>
@@ -877,7 +877,7 @@ export function Admin() {
                     {copiedEventId === ev.id ? "Link copied" : ev.published ? "Copy link" : "Publish to share"}
                   </button>
                   <button onClick={() => void adminDownloadCheckinReport(ev.id).catch(() => setNotice("Could not download the check-in list"))}
-                    className="px-4 py-1.5 rounded-full text-xs border" style={{ borderColor: "var(--gold)", color: "var(--gold)" }}>
+                    className="px-4 py-1.5 rounded-full text-xs border" style={{ borderColor: "var(--gold-ink)", color: "var(--gold-ink)" }}>
                     Check-in CSV
                   </button>
                   <button onClick={() => startEdit(ev)} className="px-4 py-1.5 rounded-full text-xs border" style={{ borderColor: "var(--jade)", color: "var(--jade)" }}>Edit</button>
@@ -904,7 +904,7 @@ export function Admin() {
               max-w-md, which left room for an inline label to sit alongside. */}
           <div className="max-w-md">
             <label htmlFor="reg-event-filter"
-              className="block text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold)" }}>
+              className="block text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold-ink)" }}>
               Filter by event
             </label>
             <select
@@ -988,7 +988,7 @@ export function Admin() {
                   <p className="font-medium">{s.name}</p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--ink-soft)" }}>{s.eventTitle}</p>
                 </div>
-                <span className="text-xs shrink-0 text-right" style={{ color: s.status === "confirmed" ? "var(--jade)" : "var(--gold)" }}>
+                <span className="text-xs shrink-0 text-right" style={{ color: s.status === "confirmed" ? "var(--jade)" : "var(--gold-ink)" }}>
                   {s.status}{s.paid ? " · paid" : ""}
                 </span>
               </div>
@@ -1008,7 +1008,7 @@ export function Admin() {
                 <strong>{paidLabel(s)}</strong>
                 {s.discountCode && (
                   <span className="ml-2 inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full bg-[#EFE7DA]"
-                    style={{ color: "var(--gold)" }}>
+                    style={{ color: "var(--gold-ink)" }}>
                     {s.discountCode}
                   </span>
                 )}
@@ -1026,7 +1026,7 @@ export function Admin() {
         <div className="mt-4 overflow-x-auto bg-white/70 border rounded-lg hidden md:block" style={{ borderColor: "#E9DFD0" }}>
           <table className="w-full text-sm">
               <thead>
-                <tr style={{ color: "var(--gold)" }}>
+                <tr style={{ color: "var(--gold-ink)" }}>
                   {["Event", "Name", "Email", "Phone", "Seats", "Event seats", "Paid", "Discount", "Status", "Note", ""]
                     .map(h => <th key={h} className={th}>{h}</th>)}
                 </tr>
@@ -1053,7 +1053,7 @@ export function Admin() {
                     <td className="px-4 py-3">
                       {s.discountCode ? (
                         <span className="inline-block text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full bg-[#EFE7DA]"
-                          style={{ color: "var(--gold)" }}>
+                          style={{ color: "var(--gold-ink)" }}>
                           {s.discountCode}
                         </span>
                       ) : (
@@ -1061,7 +1061,7 @@ export function Admin() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span style={{ color: s.status === "confirmed" ? "var(--jade)" : "var(--gold)" }}>
+                      <span style={{ color: s.status === "confirmed" ? "var(--jade)" : "var(--gold-ink)" }}>
                         {s.status}{s.paid ? " · paid" : ""}
                       </span>
                     </td>
@@ -1085,7 +1085,7 @@ export function Admin() {
           <div className="mb-6 rounded-lg border bg-white/70 p-4" style={{ borderColor: "#E9DFD0" }}>
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-xs uppercase tracking-[0.14em]" style={{ color: "var(--gold)" }}>Square connection</p>
+                <p className="text-xs uppercase tracking-[0.14em]" style={{ color: "var(--gold-ink)" }}>Square connection</p>
                 <p className="text-xs mt-1" style={{ color: "var(--ink-soft)" }}>
                   Run this if guests report that payment isn't working.
                 </p>
@@ -1150,7 +1150,7 @@ export function Admin() {
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ color: "var(--gold)" }}>
+                  <tr style={{ color: "var(--gold-ink)" }}>
                     {["Date", "Event", "Guest", "Email", "Seats", "Total", "Status"].map(h => <th key={h} className={th}>{h}</th>)}
                   </tr>
                 </thead>
@@ -1164,7 +1164,7 @@ export function Admin() {
                       <td className="px-4 py-3">{o.seats ?? "—"}</td>
                       <td className="px-4 py-3 font-medium">{money(o.totalCents)}</td>
                       <td className="px-4 py-3">
-                        <span style={{ color: o.paid ? "var(--jade)" : "var(--gold)" }}>
+                        <span style={{ color: o.paid ? "var(--jade)" : "var(--gold-ink)" }}>
                           {o.paid ? "Paid" : o.state === "OPEN" ? "Unpaid" : o.state.toLowerCase()}
                         </span>
                       </td>
@@ -1214,7 +1214,7 @@ export function Admin() {
                           from `truncate` sets the card's minimum width. */}
                       <span className="min-w-0 flex-1 truncate">
                         <strong>{r.code}</strong> · {r.email}
-                        <span className="ml-2 text-xs" style={{ color: r.paid ? "var(--jade)" : "var(--gold)" }}>
+                        <span className="ml-2 text-xs" style={{ color: r.paid ? "var(--jade)" : "var(--gold-ink)" }}>
                           {r.paid ? "used" : "pending"}
                         </span>
                       </span>
@@ -1272,7 +1272,7 @@ export function Admin() {
             <div className="space-y-4 mt-4">
               <div>
                 <label htmlFor="cat-name" className="block text-[11px] uppercase tracking-[0.12em] mb-2"
-                  style={{ color: "var(--gold)" }}>
+                  style={{ color: "var(--gold-ink)" }}>
                   Name
                 </label>
                 <input id="cat-name" className={inputCls} maxLength={40}
@@ -1283,7 +1283,7 @@ export function Admin() {
               {/* A fixed palette rather than a colour picker — categories added
                   later still have to look like they belong to the site. */}
               <fieldset>
-                <legend className="text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold)" }}>
+                <legend className="text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold-ink)" }}>
                   Colour
                 </legend>
                 <div className="flex flex-wrap gap-2">
@@ -1306,7 +1306,7 @@ export function Admin() {
               </fieldset>
 
               <div>
-                <p className="text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold)" }}>Preview</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--gold-ink)" }}>Preview</p>
                 <span className={`inline-block text-[11px] uppercase tracking-[0.14em] px-2.5 py-1 rounded-full ${colorMeta(catDraft.color).chip}`}>
                   {catDraft.name.trim() || "Category name"}
                 </span>
