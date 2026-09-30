@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import { db, eventsTable, registrationsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { sendRegistrationConfirmationEmail } from "../lib/email";
@@ -254,22 +254,21 @@ async function confirmRegistration(
   paymentId: string | null,
   amountPaidCents: number | null,
 ) {
+  // The webhook and the confirmation page's verify-payment poll routinely race
+  // for the same registration. Flip pending -> confirmed in one conditional
+  // update so exactly one of them wins; a read-then-write let both through and
+  // took the seats twice.
   const [reg] = await db
-    .select()
-    .from(registrationsTable)
-    .where(eq(registrationsTable.id, registrationId))
-    .limit(1);
-
-  if (!reg || reg.status !== "pending") return;
-
-  await db
     .update(registrationsTable)
     .set({
       status: "confirmed",
-      paymentSessionId: paymentId ?? reg.paymentSessionId,
-      amountPaidCents: amountPaidCents ?? reg.amountPaidCents,
+      ...(paymentId != null ? { paymentSessionId: paymentId } : {}),
+      ...(amountPaidCents != null ? { amountPaidCents } : {}),
     })
-    .where(eq(registrationsTable.id, registrationId));
+    .where(and(eq(registrationsTable.id, registrationId), eq(registrationsTable.status, "pending")))
+    .returning();
+
+  if (!reg) return;
 
   const [evt] = await db
     .select()

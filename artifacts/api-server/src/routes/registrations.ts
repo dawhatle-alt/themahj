@@ -231,10 +231,19 @@ router.post("/registrations/:id/verify-payment", async (req, res): Promise<void>
     const evidence = { state: o?.state ?? null, total, due, tendered: isPaid };
 
     if (isPaid) {
-      await db
+      // Conditional on still being pending: the Square webhook confirms the
+      // same row at about the same moment, and only the winner may take the
+      // seats and send the email. The loser just reports what happened.
+      const [won] = await db
         .update(registrationsTable)
         .set({ status: "confirmed", amountPaidCents: orderTotalCents(order) ?? reg.amountPaidCents })
-        .where(eq(registrationsTable.id, id));
+        .where(and(eq(registrationsTable.id, id), eq(registrationsTable.status, "pending")))
+        .returning({ id: registrationsTable.id });
+
+      if (!won) {
+        res.json({ status: "confirmed", evidence });
+        return;
+      }
 
       if (evt.spotsLeft < reg.seats) {
         logger.error(
