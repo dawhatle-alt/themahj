@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, notInArray } from "drizzle-orm";
 import { db, privateLessonBookingsTable, privateEventBookingsTable } from "@workspace/db";
 import { logger } from "./logger";
 import { getSquareClient, getSquareLocationId } from "./square";
@@ -47,41 +47,44 @@ interface ConfirmOpts {
   amountPaidCents?: number | null;
 }
 
+/** Only the payment references Square actually supplied, so none is blanked. */
+function paymentRefs(opts: ConfirmOpts) {
+  return {
+    ...(opts.paymentId != null ? { paymentSessionId: opts.paymentId } : {}),
+    ...(opts.orderId != null ? { squareOrderId: opts.orderId } : {}),
+    ...(opts.amountPaidCents != null ? { amountPaidCents: opts.amountPaidCents } : {}),
+  };
+}
+
 /**
  * Marks a lesson booking paid and sends the receipt + owner alert exactly once.
  *
  * Reached from the Square webhook and from the confirmation page's polling
- * fallback, so it has to be idempotent: only the first transition into a paid
- * status sends mail, while the payment reference is recorded either way.
+ * fallback, often at the same moment, so the transition into "paid" is one
+ * conditional UPDATE and only the caller that wins it sends mail. A
+ * read-then-write let both callers see an unpaid booking and both email.
+ * The payment reference is still recorded when the booking was already paid.
  */
 export async function confirmPrivateLessonBooking(
   bookingId: number,
   opts: ConfirmOpts = {},
 ): Promise<void> {
   const [booking] = await db
-    .select()
-    .from(privateLessonBookingsTable)
-    .where(eq(privateLessonBookingsTable.id, bookingId))
-    .limit(1);
+    .update(privateLessonBookingsTable)
+    .set({ status: "paid", ...paymentRefs(opts), updatedAt: new Date() })
+    .where(and(eq(privateLessonBookingsTable.id, bookingId), notInArray(privateLessonBookingsTable.status, [...PAID_STATUSES])))
+    .returning();
+
   if (!booking) {
-    logger.warn({ bookingId }, "Square payment referenced an unknown lesson booking");
+    // Already paid (the other caller won), or no such booking.
+    const [existing] = await db
+      .update(privateLessonBookingsTable)
+      .set({ ...paymentRefs(opts), updatedAt: new Date() })
+      .where(eq(privateLessonBookingsTable.id, bookingId))
+      .returning({ id: privateLessonBookingsTable.id });
+    if (!existing) logger.warn({ bookingId }, "Square payment referenced an unknown lesson booking");
     return;
   }
-
-  const alreadyPaid = PAID_STATUSES.has(booking.status);
-
-  await db
-    .update(privateLessonBookingsTable)
-    .set({
-      status: alreadyPaid ? booking.status : "paid",
-      paymentSessionId: opts.paymentId ?? booking.paymentSessionId,
-      squareOrderId: opts.orderId ?? booking.squareOrderId,
-      amountPaidCents: opts.amountPaidCents ?? booking.amountPaidCents,
-      updatedAt: new Date(),
-    })
-    .where(eq(privateLessonBookingsTable.id, bookingId));
-
-  if (alreadyPaid) return;
 
   const base = {
     kindLabel: "private lesson",
@@ -116,29 +119,21 @@ export async function confirmPrivateEventBooking(
   opts: ConfirmOpts = {},
 ): Promise<void> {
   const [booking] = await db
-    .select()
-    .from(privateEventBookingsTable)
-    .where(eq(privateEventBookingsTable.id, bookingId))
-    .limit(1);
+    .update(privateEventBookingsTable)
+    .set({ status: "paid", ...paymentRefs(opts), updatedAt: new Date() })
+    .where(and(eq(privateEventBookingsTable.id, bookingId), notInArray(privateEventBookingsTable.status, [...PAID_STATUSES])))
+    .returning();
+
   if (!booking) {
-    logger.warn({ bookingId }, "Square payment referenced an unknown event booking");
+    // Already paid (the other caller won), or no such booking.
+    const [existing] = await db
+      .update(privateEventBookingsTable)
+      .set({ ...paymentRefs(opts), updatedAt: new Date() })
+      .where(eq(privateEventBookingsTable.id, bookingId))
+      .returning({ id: privateEventBookingsTable.id });
+    if (!existing) logger.warn({ bookingId }, "Square payment referenced an unknown event booking");
     return;
   }
-
-  const alreadyPaid = PAID_STATUSES.has(booking.status);
-
-  await db
-    .update(privateEventBookingsTable)
-    .set({
-      status: alreadyPaid ? booking.status : "paid",
-      paymentSessionId: opts.paymentId ?? booking.paymentSessionId,
-      squareOrderId: opts.orderId ?? booking.squareOrderId,
-      amountPaidCents: opts.amountPaidCents ?? booking.amountPaidCents,
-      updatedAt: new Date(),
-    })
-    .where(eq(privateEventBookingsTable.id, bookingId));
-
-  if (alreadyPaid) return;
 
   const base = {
     kindLabel: "private event",
