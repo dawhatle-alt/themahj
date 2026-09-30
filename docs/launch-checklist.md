@@ -290,7 +290,7 @@ chain rather than individual settings.
 
 ## Still open / not blocking launch
 
-- [ ] **Drop `public.events_old`** once the client has confirmed the site works.
+- [x] **Drop `public.events_old`** once the client has confirmed the site works. (Dropped 2026-09-29; CASCADE removed only the legacy `signups` FK.)
       It is the pre-migration copy of the `events` table, kept as a safety net
       when the table was rebuilt to match the Drizzle schema
 - [ ] Check whether the legacy `photos` and `signups` tables are still used by
