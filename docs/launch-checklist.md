@@ -293,8 +293,9 @@ chain rather than individual settings.
 - [x] **Drop `public.events_old`** once the client has confirmed the site works. (Dropped 2026-09-29; CASCADE removed only the legacy `signups` FK.)
       It is the pre-migration copy of the `events` table, kept as a safety net
       when the table was rebuilt to match the Drizzle schema
-- [ ] Check whether the legacy `photos` and `signups` tables are still used by
-      any code — they are scaffold leftovers with one row each
+- [x] Check whether the legacy `photos` and `signups` tables are still used by
+      any code — they are scaffold leftovers with one row each. (Unused; both
+      dropped 2026-09-29 along with their RLS policies.)
 - [ ] Contact form or a clearer "ask a question" path — currently the footer just
       displays an email address
 - [ ] Transfer plan if the arrangement ever ends: Vercel and Supabase projects
