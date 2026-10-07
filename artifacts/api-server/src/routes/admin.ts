@@ -85,7 +85,16 @@ router.put("/admin/events/:id", requireAdmin, async (req, res): Promise<void> =>
   if ("priceCents" in b) updateData.priceCents = b.priceCents != null ? Number(b.priceCents) : null;
   if (b.category !== undefined) updateData.category = b.category;
   if (b.imagePath !== undefined) updateData.imagePath = b.imagePath;
-  if (b.totalSpots !== undefined) updateData.totalSpots = Number(b.totalSpots);
+  if (b.totalSpots !== undefined) {
+    const total = Number(b.totalSpots);
+    updateData.totalSpots = total;
+    // spots_left is a counter, so a capacity change must shift it by the same
+    // delta (pending holds and confirmed seats stay taken). Column refs on the
+    // right-hand side are pre-update values, so this is atomic.
+    if (b.spotsLeft === undefined) {
+      updateData.spotsLeft = sql`GREATEST(0, LEAST(${total}, ${eventsTable.spotsLeft} + (${total} - ${eventsTable.totalSpots})))`;
+    }
+  }
   if (b.spotsLeft !== undefined) updateData.spotsLeft = Number(b.spotsLeft);
   if (b.host !== undefined) updateData.host = b.host;
   if (b.published !== undefined) updateData.published = b.published;
